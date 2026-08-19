@@ -63,6 +63,25 @@ export type PickupDropTerm =
 export type UserRole = 'Executive' | 'Analyst' | 'Auditor' | 'Admin' | string;
 export type AppMode = 'DEMO' | 'PRIVATE';
 
+export const EXCHANGE_RATES_VS_EUR: Record<string, number> = {
+  EUR: 1.0,
+  USD: 1.08,
+  GBP: 0.85,
+  AED: 3.97,
+  CZK: 25.2,
+};
+
+export function convertCurrency(amount: number, fromCurrency = 'EUR', toCurrency = 'EUR'): number {
+  if (!amount || isNaN(amount)) return 0;
+  const fromUpper = (fromCurrency || 'EUR').toUpperCase();
+  const toUpper = (toCurrency || 'EUR').toUpperCase();
+  if (fromUpper === toUpper) return amount;
+  const fromRate = EXCHANGE_RATES_VS_EUR[fromUpper] || 1.0;
+  const toRate = EXCHANGE_RATES_VS_EUR[toUpper] || 1.0;
+  const amountInEur = amount / fromRate;
+  return Math.round(amountInEur * toRate * 100) / 100;
+}
+
 export function getCurrencySymbol(currency?: string): string {
   switch ((currency || '').toUpperCase()) {
     case 'USD':

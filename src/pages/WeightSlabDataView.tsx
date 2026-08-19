@@ -38,13 +38,15 @@ import {
   Legend,
 } from 'recharts';
 import { useApp } from '../context/AppContext';
-import { getCurrencySymbol } from '../types';
+import { getCurrencySymbol, convertCurrency } from '../types';
 import { serializeWeightSlabsToCsv, downloadFile } from '../business-rules/legacyTrustSerializer';
 import { WeightSlabOutlierAnalytics, EnrichedSlabItem } from '../components/WeightSlabOutlierAnalytics';
 
 // Custom Premium Dark Navy Tooltip Component
 const CustomChartTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
+    const itemCurr = payload[0]?.payload?.currency;
+    const currSym = getCurrencySymbol(itemCurr);
     return (
       <div className="bg-[#0F172A] border border-[#F59E0B]/50 p-3.5 rounded-2xl shadow-2xl text-white text-xs font-sans space-y-1.5 z-50 backdrop-blur-md">
         <div className="font-mono font-bold text-[#FEF3C7] border-b border-slate-700/80 pb-1.5 flex items-center justify-between gap-3">
@@ -58,7 +60,7 @@ const CustomChartTooltip = ({ active, payload, label }: any) => {
               {entry.name}:
             </span>
             <span className="font-mono font-bold text-white">
-              {typeof entry.value === 'number' ? `${getCurrencySymbol()}${entry.value.toFixed(2)}` : entry.value}
+              {typeof entry.value === 'number' ? `${currSym}${entry.value.toFixed(2)}` : entry.value}
             </span>
           </div>
         ))}
@@ -92,22 +94,27 @@ export const WeightSlabDataView: React.FC = () => {
     }
   }, [settings.defaultCurrency]);
 
-  // Enriched slab records with parent haulage record context
+  // Enriched slab records with parent haulage record context & dynamic currency conversion
   const enrichedSlabs: EnrichedSlabItem[] = useMemo(() => {
     return allWeightSlabs.map((slab) => {
       const parent = allHaulageRecords.find((r) => r.id === slab.id);
+      const srcCurrency = parent?.currency || settings.defaultCurrency || 'EUR';
+      const activeCurrency = currencyFilter === 'ALL' ? srcCurrency : currencyFilter;
+      const convertedAmt = convertCurrency(slab.amount, srcCurrency, activeCurrency);
+
       return {
         ...slab,
+        amount: convertedAmt,
         parentContractId: parent?.contractId || '',
         vendorCode: parent?.vendorCode || 'DEMO001',
         direction: parent?.direction || (slab.id % 2 === 0 ? 'IMPORT' : 'EXPORT'),
-        currency: parent?.currency || 'EUR',
+        currency: activeCurrency,
         pickupLoc: parent?.pickupLocationName || 'Port',
         dropLoc: parent?.dropLocationName || 'Inland',
         bandKey: `${slab.size === '20s' ? "20'" : "40'"} <${slab.to}t`,
       };
     });
-  }, [allWeightSlabs, allHaulageRecords]);
+  }, [allWeightSlabs, allHaulageRecords, currencyFilter, settings.defaultCurrency]);
 
   // Filtered dataset
   const filteredSlabs = useMemo(() => {
@@ -123,11 +130,10 @@ export const WeightSlabDataView: React.FC = () => {
       const matchVendor = vendorFilter === 'ALL' || s.vendorCode === vendorFilter;
       const matchDirection = directionFilter === 'ALL' || s.direction === directionFilter;
       const matchSize = sizeFilter === 'ALL' || s.size === sizeFilter;
-      const matchCurrency = currencyFilter === 'ALL' || s.currency === currencyFilter;
 
-      return matchSearch && matchContract && matchVendor && matchDirection && matchSize && matchCurrency;
+      return matchSearch && matchContract && matchVendor && matchDirection && matchSize;
     });
-  }, [enrichedSlabs, searchTerm, contractFilter, vendorFilter, directionFilter, sizeFilter, currencyFilter]);
+  }, [enrichedSlabs, searchTerm, contractFilter, vendorFilter, directionFilter, sizeFilter]);
 
   // KPIs
   const analyticsKPIs = useMemo(() => {
@@ -378,9 +384,11 @@ export const WeightSlabDataView: React.FC = () => {
               onChange={(e) => setCurrencyFilter(e.target.value)}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[#0284C7] focus:outline-hidden cursor-pointer"
             >
-              <option value="EUR">EUR (€) - Primary</option>
-              <option value="USD">USD ($) - Global</option>
-              <option value="GBP">GBP (£) - UK</option>
+              <option value="EUR">EUR (€) - Eurozone</option>
+              <option value="USD">USD ($) - Global US Dollar</option>
+              <option value="GBP">GBP (£) - British Pound</option>
+              <option value="AED">AED (د.إ) - UAE Dirham</option>
+              <option value="CZK">CZK (Kč) - Czech Koruna</option>
             </select>
           </div>
         </div>

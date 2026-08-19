@@ -19,6 +19,7 @@ import {
   AppMode,
   SystemSettings,
   ValidationResult,
+  convertCurrency,
 } from '../types';
 import {
   DEMO_VENDORS,
@@ -290,36 +291,52 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const updated = { ...prev, ...newSettings };
 
       if (newSettings.defaultCurrency && newSettings.defaultCurrency !== prev.defaultCurrency) {
+        const oldCurr = prev.defaultCurrency || 'EUR';
         const newCurr = newSettings.defaultCurrency;
 
-        setContracts((existingContracts) =>
-          existingContracts.map((c) => ({
-            ...c,
-            currency: newCurr,
-            routes: (c.routes || []).map((r) => ({
-              ...r,
-              currency: newCurr,
-            })),
-          }))
-        );
+        setTimeout(() => {
+          setContracts((existingContracts) =>
+            existingContracts.map((c) => {
+              const cCurr = c.currency || oldCurr;
+              return {
+                ...c,
+                currency: newCurr,
+                routes: (c.routes || []).map((r) => {
+                  const rCurr = r.currency || cCurr;
+                  return {
+                    ...r,
+                    currency: newCurr,
+                    generalAmount: r.generalAmount ? convertCurrency(r.generalAmount, rCurr, newCurr) : r.generalAmount,
+                    amount20: r.amount20 ? convertCurrency(r.amount20, rCurr, newCurr) : r.amount20,
+                    amount40: r.amount40 ? convertCurrency(r.amount40, rCurr, newCurr) : r.amount40,
+                  };
+                }),
+              };
+            })
+          );
 
-        setGenerationRuns((existingRuns) =>
-          existingRuns.map((run) => ({
-            ...run,
-            records: run.records.map((rec) => ({
-              ...rec,
-              currency: newCurr,
-            })),
-          }))
-        );
+          setGenerationRuns((existingRuns) =>
+            existingRuns.map((run) => ({
+              ...run,
+              records: run.records.map((rec) => {
+                const recCurr = rec.currency || oldCurr;
+                return {
+                  ...rec,
+                  currency: newCurr,
+                  amount: rec.amount ? convertCurrency(rec.amount, recCurr, newCurr) : rec.amount,
+                };
+              }),
+            }))
+          );
 
-        addAuditLog({
-          user: 'System Configuration',
-          action: 'MASTER_DATA_CHANGE',
-          entity: 'SystemSettings',
-          entityId: 'Currency',
-          summary: `Updated default application currency to ${newCurr}. Synchronized active contracts and generated haulage records.`,
-        });
+          addAuditLog({
+            user: 'System Configuration',
+            action: 'MASTER_DATA_CHANGE',
+            entity: 'SystemSettings',
+            entityId: 'Currency',
+            summary: `Updated application currency from ${oldCurr} to ${newCurr} with rate recalculation.`,
+          });
+        }, 0);
       }
 
       return updated;
