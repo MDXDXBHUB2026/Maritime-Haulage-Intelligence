@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { TrustMainRecord } from '../types';
 import { useApp } from '../context/AppContext';
+import { postJson } from '../lib/api';
 
 interface ExplainRecordDrawerProps {
   record: TrustMainRecord | null;
@@ -41,10 +42,7 @@ export const ExplainRecordDrawer: React.FC<ExplainRecordDrawerProps> = ({
   const handleAskAi = async () => {
     setIsAiLoading(true);
     try {
-      const response = await fetch('/api/gemini/assistant', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const data = await postJson<any>('/api/gemini/assistant', {
           question: `Explain why this haulage record (ID #${record.id}) was generated with Equipment '${record.equipment}', Terminal '${record.pickupZipDepotTerminal || record.dropZipDepotTerminal}', Amount '${record.amount}', and AmountType '${record.amountType}'.`,
           context: {
             record,
@@ -56,10 +54,7 @@ export const ExplainRecordDrawer: React.FC<ExplainRecordDrawerProps> = ({
               direction: sourceContract?.direction,
             },
           },
-        }),
-      });
-
-      const data = await response.json();
+        });
       if (data.success && data.answer) {
         setAiExplanation(data.answer);
       } else {

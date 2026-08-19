@@ -17,6 +17,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { postJson } from '../lib/api';
 
 export const AiAssistantView: React.FC = () => {
   const {
@@ -47,6 +48,7 @@ Routes:
 
 Remarks: Annual German rail corridor framework rate schedule.`
   );
+  const [aiError, setAiError] = useState<string | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractedData, setExtractedData] = useState<any | null>(null);
 
@@ -71,20 +73,16 @@ Remarks: Annual German rail corridor framework rate schedule.`
   const handleExtract = async () => {
     setIsExtracting(true);
     setExtractedData(null);
+    setAiError(null);
     try {
-      const response = await fetch('/api/gemini/extract-contract', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rawText: rawContractText, direction: 'IMPORT' }),
-      });
-      const data = await response.json();
+      const data = await postJson<any>('/api/gemini/extract-contract', { rawText: rawContractText, direction: 'IMPORT' });
       if (data.success && data.extracted) {
         setExtractedData(data.extracted);
       } else {
-        alert('Parsing error: ' + (data.error || 'Unable to parse rate text'));
+        setAiError(data.error || 'Unable to parse the rate schedule text.');
       }
     } catch (e: any) {
-      alert('Extraction failed: ' + e.message);
+      setAiError(e.message);
     } finally {
       setIsExtracting(false);
     }
@@ -148,22 +146,18 @@ Remarks: Annual German rail corridor framework rate schedule.`
 
     setIsAnomalyLoading(true);
     setAnomalies(null);
+    setAiError(null);
     try {
-      const response = await fetch('/api/gemini/anomaly-check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const data = await postJson<any>('/api/gemini/anomaly-check', {
           routes: target.routes,
           amountType: target.amountType,
           currency: target.currency,
-        }),
-      });
-      const data = await response.json();
+        });
       if (data.success && data.anomalies) {
         setAnomalies(data.anomalies);
       }
     } catch (e: any) {
-      alert('Anomaly check failed: ' + e.message);
+      setAiError(e.message);
     } finally {
       setIsAnomalyLoading(false);
     }
@@ -179,18 +173,13 @@ Remarks: Annual German rail corridor framework rate schedule.`
     setIsChatLoading(true);
 
     try {
-      const response = await fetch('/api/gemini/assistant', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const data = await postJson<any>('/api/gemini/assistant', {
           question: userMsg,
           context: {
             totalContracts: contracts.length,
             totalHaulageRecords: allHaulageRecords.length,
           },
-        }),
-      });
-      const data = await response.json();
+        });
       if (data.success && data.answer) {
         setMessages((prev) => [...prev, { sender: 'assistant', text: data.answer }]);
       } else {
@@ -269,6 +258,27 @@ Remarks: Annual German rail corridor framework rate schedule.`
           <span>Operational Logistics Q&A</span>
         </button>
       </div>
+
+      {aiError && (
+        <div
+          role="alert"
+          className="mb-6 flex items-start gap-3 rounded-2xl border border-[#E9C46A] bg-[#FDF6E3] p-4"
+        >
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#B7791F]" />
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase tracking-wider text-[#8A5A00]">
+              AI service unavailable
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-[#5C4813]">{aiError}</p>
+          </div>
+          <button
+            onClick={() => setAiError(null)}
+            className="ml-auto shrink-0 text-xs font-semibold text-[#8A5A00] hover:underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Tab 1: Text Extractor */}
       {activeTab === 'extract' && (

@@ -61,7 +61,15 @@ export const GeneratedTrustRecords: React.FC = () => {
   }, [allTrustRecords, searchTerm, selectedContractFilter, equipmentFilter, directionFilter]);
 
   const handleExportXlsx = (direction: HaulageDirection) => {
-    const subset = allTrustRecords.filter((r) => r._trace.direction === direction);
+    // Export the filtered view the user can see, not the entire record set.
+    const subset = filteredRecords.filter((r) => r._trace.direction === direction);
+    if (subset.length === 0) {
+      alert(
+        `No ${direction} records to export. Generate records in the Processing Engine, ` +
+          `or widen the filters above.`
+      );
+      return;
+    }
     const subsetSlabs = allWeightSlabs.filter((ws) =>
       subset.some((r) => r.id === ws.id)
     );
@@ -83,7 +91,14 @@ export const GeneratedTrustRecords: React.FC = () => {
   };
 
   const handleExportCsv = (direction: HaulageDirection) => {
-    const subset = allTrustRecords.filter((r) => r._trace.direction === direction);
+    const subset = filteredRecords.filter((r) => r._trace.direction === direction);
+    if (subset.length === 0) {
+      alert(
+        `No ${direction} records to export. Generate records in the Processing Engine, ` +
+          `or widen the filters above.`
+      );
+      return;
+    }
     const csv = serializeTrustRecordsToCsv(subset, direction, settings.legacyTrustCompatibility);
     downloadFile(csv, `HAULAGE_${direction}_ALL_RECORDS.csv`, 'text/csv');
   };

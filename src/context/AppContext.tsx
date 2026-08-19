@@ -96,7 +96,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
+        // Spread the saved object first: SystemSettings carries ~30 optional
+        // preferences, and listing them individually silently dropped every
+        // one that was not named here on each reload. The explicit entries
+        // below only guarantee the non-optional core fields have a value.
         return {
+          ...parsed,
           standardizedExportMode: parsed.standardizedExportMode ?? true,
           startRecordId: parsed.startRecordId ?? parsed.startTrustId ?? 1001,
           activeRole: parsed.activeRole ?? 'Analyst',
@@ -354,7 +359,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       haulageMode: contractData.haulageMode || 'Combined',
       tripType: contractData.tripType || 'Live Load',
       ladenStatus: contractData.ladenStatus || 'Laden',
-      currency: contractData.currency || 'EUR',
+      currency: contractData.currency || settings.defaultCurrency || 'EUR',
       amountType: contractData.amountType || 'LUMPSUM',
       lumpSumMode: contractData.lumpSumMode || 'SINGLE_AMOUNT',
       payableAt: contractData.payableAt || (dir === 'EXPORT' ? 'POL' : 'POD'),
@@ -406,7 +411,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           returnType: contractData.returnType || 'Location',
           haulageMode: contractData.haulageMode || 'Combined',
           ladenStatus: contractData.ladenStatus || 'Laden',
-          currency: contractData.currency || 'EUR',
+          currency: contractData.currency || settings.defaultCurrency || 'EUR',
           payableAt: contractData.payableAt || (dir === 'EXPORT' ? 'POL' : 'POD'),
           portToPay: contractData.portToPay || 'DEHAM',
           negotiatedOn: contractData.negotiatedOn || new Date().toISOString().split('T')[0],
