@@ -254,9 +254,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('mhi_audit_logs', JSON.stringify(auditLogs));
   }, [auditLogs]);
 
-  // Aggregate all main records and weight slabs across generation runs
+  // Aggregate all main records and weight slabs across generation runs.
+  // Records generated before _trace.direction existed are still in localStorage
+  // without it, which left the direction filter and both exports matching
+  // nothing. The run knows its own direction, so backfill from there.
   const allHaulageRecords = useMemo(() => {
-    return generationRuns.flatMap((run) => run.records);
+    return generationRuns.flatMap((run) =>
+      run.records.map((r) =>
+        r._trace?.direction
+          ? r
+          : { ...r, _trace: { ...r._trace, direction: run.direction } }
+      )
+    );
   }, [generationRuns]);
 
   const allWeightSlabs = useMemo(() => {
