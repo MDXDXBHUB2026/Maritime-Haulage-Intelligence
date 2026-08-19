@@ -165,6 +165,7 @@ export function generateImportHaulageRecords(
         updateFlag: 'I',
         _trace: {
           generationRunId: '', // populated below
+          direction: 'IMPORT',
           contractId: contract.id,
           contractNumber: contract.contractNumber,
           contractRevision: contract.revision,

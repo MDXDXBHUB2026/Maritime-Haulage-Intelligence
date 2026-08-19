@@ -164,6 +164,7 @@ export function generateExportHaulageRecords(
         updateFlag: 'I',
         _trace: {
           generationRunId: '',
+          direction: 'EXPORT',
           contractId: contract.id,
           contractNumber: contract.contractNumber,
           contractRevision: contract.revision,

@@ -37,7 +37,10 @@ export const GeneratedTrustRecords: React.FC = () => {
   const [equipmentFilter, setEquipmentFilter] = useState<string>('ALL');
   const [directionFilter, setDirectionFilter] = useState<'ALL' | HaulageDirection>('ALL');
 
-  const filteredRecords = useMemo(() => {
+  // Search, contract and equipment filters. Direction is deliberately excluded:
+  // the export buttons each name a direction, so applying the direction filter
+  // on top of them made one button always yield nothing.
+  const recordsMatchingFilters = useMemo(() => {
     return allTrustRecords.filter((r) => {
       const matchSearch =
         String(r.id).includes(searchTerm) ||
@@ -53,20 +56,26 @@ export const GeneratedTrustRecords: React.FC = () => {
       const matchEquipment =
         equipmentFilter === 'ALL' || r.equipment === equipmentFilter;
 
-      const matchDirection =
-        directionFilter === 'ALL' || r._trace.direction === directionFilter;
-
-      return matchSearch && matchContract && matchEquipment && matchDirection;
+      return matchSearch && matchContract && matchEquipment;
     });
-  }, [allTrustRecords, searchTerm, selectedContractFilter, equipmentFilter, directionFilter]);
+  }, [allTrustRecords, searchTerm, selectedContractFilter, equipmentFilter]);
+
+  // What the table shows: the above, narrowed by the direction filter.
+  const filteredRecords = useMemo(
+    () =>
+      recordsMatchingFilters.filter(
+        (r) => directionFilter === 'ALL' || r._trace.direction === directionFilter
+      ),
+    [recordsMatchingFilters, directionFilter]
+  );
 
   const handleExportXlsx = (direction: HaulageDirection) => {
     // Export the filtered view the user can see, not the entire record set.
-    const subset = filteredRecords.filter((r) => r._trace.direction === direction);
+    const subset = recordsMatchingFilters.filter((r) => r._trace.direction === direction);
     if (subset.length === 0) {
       alert(
         `No ${direction} records to export. Generate records in the Processing Engine, ` +
-          `or widen the filters above.`
+          `or clear the search and contract filters above.`
       );
       return;
     }
@@ -91,11 +100,11 @@ export const GeneratedTrustRecords: React.FC = () => {
   };
 
   const handleExportCsv = (direction: HaulageDirection) => {
-    const subset = filteredRecords.filter((r) => r._trace.direction === direction);
+    const subset = recordsMatchingFilters.filter((r) => r._trace.direction === direction);
     if (subset.length === 0) {
       alert(
         `No ${direction} records to export. Generate records in the Processing Engine, ` +
-          `or widen the filters above.`
+          `or clear the search and contract filters above.`
       );
       return;
     }

@@ -325,6 +325,8 @@ export interface HaulageMainRecord {
   // Traceability metadata (Deterministic Audit Link)
   _trace: {
     generationRunId: string;
+    /** Set by the generation engines; the records page filters and exports on it. */
+    direction: HaulageDirection;
     contractId: string;
     contractNumber: string;
     contractRevision: number;
