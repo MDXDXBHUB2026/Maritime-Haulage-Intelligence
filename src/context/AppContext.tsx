@@ -86,7 +86,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [activeView, setActiveView] = useState<string>('import-workbench');
+  const [activeView, setActiveView] = useState<string>('overview');
   const [selectedContractId, setSelectedContractId] = useState<string | null>('mhi-imp-001');
   const [inspectedRecord, setInspectedRecord] = useState<HaulageMainRecord | null>(null);
 
