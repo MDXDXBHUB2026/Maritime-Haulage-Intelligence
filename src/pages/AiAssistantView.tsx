@@ -90,6 +90,16 @@ Remarks: Annual German rail corridor framework rate schedule.`
 
   const handleApplyExtracted = () => {
     if (!extractedData) return;
+    const isWeightSlab =
+      extractedData.amountType === 'Wt.Slab' ||
+      extractedData.amountType === 'WT_SLAB' ||
+      extractedData.amountType === 'WEIGHT_SLAB';
+
+    const isEquipSpecific =
+      extractedData.lumpSumMode === 'EQUIPMENT_SPECIFIC' ||
+      extractedData.lumpSumMode === 'SEPARATE_AMOUNTS' ||
+      extractedData.lumpSumMode === 'EQUIPMENT';
+
     const newC = createContract({
       contractNumber: extractedData.contractNumber || `MHI-IMP-EXT-${Date.now().toString().slice(-4)}`,
       vendorCode: extractedData.vendorCode || 'DEMO1001',
@@ -98,32 +108,32 @@ Remarks: Annual German rail corridor framework rate schedule.`
       pickupLocationCode: extractedData.pickupLocationCode || 'DEHAM',
       pickupLocationName: extractedData.pickupLocationName || 'Hamburg',
       currency: extractedData.currency || 'EUR',
-      amountType: extractedData.amountType === 'Wt.Slab' ? 'Wt.Slab' : 'Lumpsum',
-      lumpSumMode: extractedData.lumpSumMode || 'SINGLE',
+      amountType: isWeightSlab ? 'WEIGHT_SLAB' : 'LUMPSUM',
+      lumpSumMode: isEquipSpecific ? 'EQUIPMENT_SPECIFIC' : 'SINGLE_AMOUNT',
       validFrom: extractedData.validFrom || '2026-03-01',
       validTo: extractedData.validTo || '2026-12-31',
       remarks: extractedData.remarks || 'Ingested via Rate Schedule Parser',
       routes: (extractedData.routes || []).map((r: any, idx: number) => ({
         id: `r-ext-${Date.now()}-${idx + 1}`,
         sequence: idx + 1,
-        originLocationName: 'Hamburg',
-        originLocationCode: 'DEHAM',
-        originType: 'CY',
-        originTerm: 'Free Out',
-        destinationLocationName: r.dropLocationName || 'Prague',
-        destinationLocationCode: r.dropLocationCode || 'CZPRG',
-        destinationType: 'Door',
-        destinationTerm: 'CY/CY',
-        returnLocationName: 'Hamburg',
-        returnLocationCode: 'DEHAM',
-        returnType: 'CY',
+        pickupLocationName: extractedData.pickupLocationName || 'Hamburg',
+        pickupLocationCode: extractedData.pickupLocationCode || 'DEHAM',
+        pickupType: 'Terminal',
+        pickupTerm: 'CY',
+        dropLocationName: r.dropLocationName || 'Prague',
+        dropLocationCode: r.dropLocationCode || 'CZPRG',
+        dropType: 'Location',
+        dropTerm: 'DEPOT',
+        returnLocationName: extractedData.pickupLocationName || 'Hamburg',
+        returnLocationCode: extractedData.pickupLocationCode || 'DEHAM',
+        returnType: 'Location',
         haulageMode: r.haulageMode || 'Combined',
-        tripType: 'One-Way',
+        tripType: 'Live Load',
         ladenStatus: 'Laden',
-        lumpSumAmount: r.generalAmount || 750,
+        generalAmount: r.generalAmount || 750,
         amount20: r.amount20 || 600,
         amount40: r.amount40 || 850,
-        isActive: true,
+        active: true,
       })),
     });
 
