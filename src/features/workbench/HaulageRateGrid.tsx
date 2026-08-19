@@ -18,6 +18,7 @@ import {
   PickupDropTerm,
   AmountType,
   LumpSumMode,
+  getCurrencySymbol,
 } from '../../types';
 import {
   Plus,
@@ -604,16 +605,16 @@ export const HaulageRateGrid: React.FC<HaulageRateGridProps> = ({
               {/* Col 13: LUMP SUM DYNAMIC AMOUNT COLUMNS */}
               {isLumpSumSingle && (
                 <th className="px-3 py-2 bg-emerald-50 text-emerald-950 font-bold text-right border-l-2 border-emerald-400">
-                  Amount (€)
+                  Amount ({getCurrencySymbol(header?.currency)})
                 </th>
               )}
               {isLumpSumSplit && (
                 <>
                   <th className="px-3 py-2 bg-emerald-50 text-emerald-950 font-bold text-right border-l-2 border-emerald-400">
-                    20s Amount (€)
+                    20s Amount ({getCurrencySymbol(header?.currency)})
                   </th>
                   <th className="px-3 py-2 bg-emerald-50 text-emerald-950 font-bold text-right">
-                    40s Amount (€)
+                    40s Amount ({getCurrencySymbol(header?.currency)})
                   </th>
                 </>
               )}

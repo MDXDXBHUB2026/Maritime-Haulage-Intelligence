@@ -38,6 +38,7 @@ import {
   Legend,
 } from 'recharts';
 import { useApp } from '../context/AppContext';
+import { getCurrencySymbol } from '../types';
 import { serializeWeightSlabsToCsv, downloadFile } from '../business-rules/legacyTrustSerializer';
 import { WeightSlabOutlierAnalytics, EnrichedSlabItem } from '../components/WeightSlabOutlierAnalytics';
 
@@ -57,7 +58,7 @@ const CustomChartTooltip = ({ active, payload, label }: any) => {
               {entry.name}:
             </span>
             <span className="font-mono font-bold text-white">
-              {typeof entry.value === 'number' ? `€${entry.value.toFixed(2)}` : entry.value}
+              {typeof entry.value === 'number' ? `${getCurrencySymbol()}${entry.value.toFixed(2)}` : entry.value}
             </span>
           </div>
         ))}
@@ -74,6 +75,7 @@ export const WeightSlabDataView: React.FC = () => {
     contracts,
     vendors,
     setInspectedRecord,
+    settings,
   } = useApp();
 
   // Search & Multi-Faceted Filters
@@ -82,7 +84,13 @@ export const WeightSlabDataView: React.FC = () => {
   const [vendorFilter, setVendorFilter] = useState<string>('ALL');
   const [directionFilter, setDirectionFilter] = useState<string>('ALL');
   const [sizeFilter, setSizeFilter] = useState<string>('ALL');
-  const [currencyFilter, setCurrencyFilter] = useState<string>('EUR');
+  const [currencyFilter, setCurrencyFilter] = useState<string>(settings.defaultCurrency || 'EUR');
+
+  React.useEffect(() => {
+    if (settings.defaultCurrency) {
+      setCurrencyFilter(settings.defaultCurrency);
+    }
+  }, [settings.defaultCurrency]);
 
   // Enriched slab records with parent haulage record context
   const enrichedSlabs: EnrichedSlabItem[] = useMemo(() => {
@@ -400,25 +408,25 @@ export const WeightSlabDataView: React.FC = () => {
 
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-enterprise-xs card-glow-interactive">
           <span className="text-[10px] uppercase font-bold text-[#64748B] block truncate font-mono">Avg 20ft Rate</span>
-          <span className="text-xl font-extrabold text-[#0284C7] font-mono mt-1 block">€{analyticsKPIs.avgRate20}</span>
+          <span className="text-xl font-extrabold text-[#0284C7] font-mono mt-1 block">{getCurrencySymbol(currencyFilter)}{analyticsKPIs.avgRate20}</span>
           <span className="text-[10px] text-slate-500 font-medium">Across tiers</span>
         </div>
 
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-enterprise-xs card-glow-interactive">
           <span className="text-[10px] uppercase font-bold text-[#64748B] block truncate font-mono">Avg 40ft Rate</span>
-          <span className="text-xl font-extrabold text-[#0D9488] font-mono mt-1 block">€{analyticsKPIs.avgRate40}</span>
+          <span className="text-xl font-extrabold text-[#0D9488] font-mono mt-1 block">{getCurrencySymbol(currencyFilter)}{analyticsKPIs.avgRate40}</span>
           <span className="text-[10px] text-slate-500 font-medium">Across tiers</span>
         </div>
 
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-enterprise-xs card-glow-interactive">
           <span className="text-[10px] uppercase font-bold text-[#64748B] block truncate font-mono">Highest Rate</span>
-          <span className="text-xl font-extrabold text-indigo-700 font-mono mt-1 block">€{analyticsKPIs.highestRate}</span>
+          <span className="text-xl font-extrabold text-indigo-700 font-mono mt-1 block">{getCurrencySymbol(currencyFilter)}{analyticsKPIs.highestRate}</span>
           <span className="text-[10px] text-slate-500 font-medium">Heavyweight tier</span>
         </div>
 
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-enterprise-xs card-glow-interactive">
           <span className="text-[10px] uppercase font-bold text-[#64748B] block truncate font-mono">Lowest Rate</span>
-          <span className="text-xl font-extrabold text-emerald-700 font-mono mt-1 block">€{analyticsKPIs.lowestRate}</span>
+          <span className="text-xl font-extrabold text-emerald-700 font-mono mt-1 block">{getCurrencySymbol(currencyFilter)}{analyticsKPIs.lowestRate}</span>
           <span className="text-[10px] text-slate-500 font-medium">Base weight tier</span>
         </div>
 

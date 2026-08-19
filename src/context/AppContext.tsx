@@ -286,7 +286,44 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateSettings = (newSettings: Partial<SystemSettings>) => {
-    setSettings((prev) => ({ ...prev, ...newSettings }));
+    setSettings((prev) => {
+      const updated = { ...prev, ...newSettings };
+
+      if (newSettings.defaultCurrency && newSettings.defaultCurrency !== prev.defaultCurrency) {
+        const newCurr = newSettings.defaultCurrency;
+
+        setContracts((existingContracts) =>
+          existingContracts.map((c) => ({
+            ...c,
+            currency: newCurr,
+            routes: (c.routes || []).map((r) => ({
+              ...r,
+              currency: newCurr,
+            })),
+          }))
+        );
+
+        setGenerationRuns((existingRuns) =>
+          existingRuns.map((run) => ({
+            ...run,
+            records: run.records.map((rec) => ({
+              ...rec,
+              currency: newCurr,
+            })),
+          }))
+        );
+
+        addAuditLog({
+          user: 'System Configuration',
+          action: 'MASTER_DATA_CHANGE',
+          entity: 'SystemSettings',
+          entityId: 'Currency',
+          summary: `Updated default application currency to ${newCurr}. Synchronized active contracts and generated haulage records.`,
+        });
+      }
+
+      return updated;
+    });
   };
 
   const toggleTheme = () => {

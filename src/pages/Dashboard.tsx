@@ -6,6 +6,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { useApp } from '../context/AppContext';
+import { getCurrencySymbol } from '../types';
 import {
   BarChart,
   Bar,
@@ -55,7 +56,7 @@ import {
 import * as XLSX from 'xlsx';
 
 // Custom Clean Light/Dark Tooltip Component
-const CustomDashboardTooltip = ({ active, payload, label }: any) => {
+const CustomDashboardTooltip = ({ active, payload, label, currSym }: any) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-[#0F172A] border border-[#F59E0B]/50 p-3 rounded-xl shadow-2xl text-white text-xs font-sans space-y-1.5 z-50">
@@ -72,7 +73,7 @@ const CustomDashboardTooltip = ({ active, payload, label }: any) => {
             <span className="font-mono font-bold text-white">
               {typeof entry.value === 'number'
                 ? entry.name?.toLowerCase().includes('rate') || entry.name?.toLowerCase().includes('cost')
-                  ? `€${entry.value}`
+                  ? `${currSym || '€'}${entry.value}`
                   : entry.value
                 : entry.value}
             </span>
@@ -96,7 +97,10 @@ export const Dashboard: React.FC = () => {
     setActiveView,
     setSelectedContractId,
     setInspectedRecord,
+    settings,
   } = useApp();
+
+  const activeCurrSymbol = getCurrencySymbol(settings.defaultCurrency);
 
   // Filter States
   const [selectedDirection, setSelectedDirection] = useState<'ALL' | 'IMPORT' | 'EXPORT'>('ALL');
@@ -477,7 +481,7 @@ export const Dashboard: React.FC = () => {
         >
           <span className="text-[10px] font-mono uppercase font-bold text-[#64748B] block">Avg 20ft Rate</span>
           <span className="text-3xl font-extrabold text-[#0D9488] font-mono mt-1 block">
-            €{portfolioSummary.avg20}
+            {activeCurrSymbol}{portfolioSummary.avg20}
           </span>
           <span className="text-[10px] text-emerald-600 font-bold block mt-1">Tier 2 Median</span>
         </motion.div>
@@ -488,7 +492,7 @@ export const Dashboard: React.FC = () => {
         >
           <span className="text-[10px] font-mono uppercase font-bold text-[#64748B] block">Avg 40ft Rate</span>
           <span className="text-3xl font-extrabold text-[#F59E0B] font-mono mt-1 block">
-            €{portfolioSummary.avg40}
+            {activeCurrSymbol}{portfolioSummary.avg40}
           </span>
           <span className="text-[10px] text-[#64748B] font-medium block mt-1">Tier 2 Median</span>
         </motion.div>

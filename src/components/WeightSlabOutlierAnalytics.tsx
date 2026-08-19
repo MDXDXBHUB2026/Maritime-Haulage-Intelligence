@@ -60,22 +60,20 @@ interface WeightSlabOutlierAnalyticsProps {
   onInspectRecord: (recordId: number) => void;
 }
 
-// Custom Recharts Outlier Tooltip
+import { getCurrencySymbol } from '../types';
+
+// Custom Tooltip for Analytics Charts
 const OutlierChartTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0]?.payload;
-    const isOutlier = data?.isOutlier;
-
+    const currSym = getCurrencySymbol(data?.currency);
     return (
-      <div className="bg-[#0F172A] border border-[#F59E0B]/50 p-3.5 rounded-2xl shadow-2xl text-white text-xs font-sans space-y-2 z-50 max-w-xs backdrop-blur-md">
-        <div className="flex items-center justify-between border-b border-slate-700/80 pb-1.5 gap-2">
-          <span className="font-mono font-bold text-[#FEF3C7] truncate">
-            {data?.route || data?.tierLabel || label}
-          </span>
-          {isOutlier ? (
-            <span className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-rose-950/80 text-rose-300 border border-rose-500 flex items-center gap-1">
-              <AlertTriangle className="w-2.5 h-2.5" />
-              OUTLIER
+      <div className="bg-[#0F172A] border border-[#F59E0B]/50 p-4 rounded-2xl shadow-2xl text-white text-xs font-sans space-y-2.5 z-50 max-w-xs backdrop-blur-md">
+        <div className="font-mono font-bold text-[#FEF3C7] border-b border-slate-700/80 pb-2 flex items-center justify-between gap-2">
+          <span className="truncate">{label || data?.corridorLabel || 'Corridor'}</span>
+          {data?.isOutlier ? (
+            <span className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-rose-950/80 text-rose-300 border border-rose-700 animate-pulse">
+              OUTLIER ({data?.deviationPercent > 0 ? '+' : ''}{data?.deviationPercent}%)
             </span>
           ) : (
             <span className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-600">
@@ -88,32 +86,32 @@ const OutlierChartTooltip = ({ active, payload, label }: any) => {
           {data?.amount !== undefined && (
             <div className="flex items-center justify-between text-slate-200">
               <span className="text-slate-400">Actual Rate:</span>
-              <span className="font-mono font-bold text-white text-sm">€{Number(data?.amount).toFixed(2)}</span>
+              <span className="font-mono font-bold text-white text-sm">{currSym}{Number(data?.amount).toFixed(2)}</span>
             </div>
           )}
           {data?.tierAvg !== undefined && (
             <div className="flex items-center justify-between text-slate-300">
               <span className="text-slate-400">Tier Benchmark:</span>
-              <span className="font-mono font-bold text-[#F59E0B]">€{Number(data?.tierAvg).toFixed(2)}</span>
+              <span className="font-mono font-bold text-[#F59E0B]">{currSym}{Number(data?.tierAvg).toFixed(2)}</span>
             </div>
           )}
           {data?.avg20 !== undefined && (
             <div className="flex items-center justify-between text-slate-300">
               <span className="text-slate-400">20 ft Avg Rate:</span>
-              <span className="font-mono font-bold text-[#38BDF8]">€{Number(data?.avg20).toFixed(2)}</span>
+              <span className="font-mono font-bold text-[#38BDF8]">{currSym}{Number(data?.avg20).toFixed(2)}</span>
             </div>
           )}
           {data?.avg40 !== undefined && (
             <div className="flex items-center justify-between text-slate-300">
               <span className="text-slate-400">40 ft Avg Rate:</span>
-              <span className="font-mono font-bold text-[#2DD4BF]">€{Number(data?.avg40).toFixed(2)}</span>
+              <span className="font-mono font-bold text-[#2DD4BF]">{currSym}{Number(data?.avg40).toFixed(2)}</span>
             </div>
           )}
           {data?.lowerBound !== undefined && data?.upperBound !== undefined && (
             <div className="flex items-center justify-between text-slate-400 text-[10px]">
               <span>Corridor Band:</span>
               <span className="font-mono text-slate-300">
-                €{Number(data?.lowerBound).toFixed(0)} – €{Number(data?.upperBound).toFixed(0)}
+                {currSym}{Number(data?.lowerBound).toFixed(0)} – {currSym}{Number(data?.upperBound).toFixed(0)}
               </span>
             </div>
           )}

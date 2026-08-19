@@ -63,6 +63,23 @@ export type PickupDropTerm =
 export type UserRole = 'Executive' | 'Analyst' | 'Auditor' | 'Admin' | string;
 export type AppMode = 'DEMO' | 'PRIVATE';
 
+export function getCurrencySymbol(currency?: string): string {
+  switch ((currency || '').toUpperCase()) {
+    case 'USD':
+      return '$';
+    case 'GBP':
+      return '£';
+    case 'CZK':
+      return 'Kč ';
+    case 'AED':
+      return 'AED ';
+    case 'EUR':
+    default:
+      return '€';
+  }
+}
+
+
 export interface WeightSlabBand {
   index?: number;
   band?: number;
