@@ -1,0 +1,6 @@
+{
+  "name": "Maritime Haulage Intelligence",
+  "description": "A maritime haulage contract management and rate automation platform designed to structure commercial agreements, manage route and equipment pricing, validate contractual data, process weight-based rates and generate standardized operational records for integration with downstream maritime and logistics systems.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
