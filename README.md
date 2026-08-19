@@ -1,4 +1,4 @@
-# Maritime Haulage Contract Intelligence (TRUST 2.0)
+# Maritime Haulage Contract Intelligence
 
 > **Enterprise Inland Logistics Contract Automation & Standardized Data Generator**  
 > *Modern reconstruction of a 2015–2016 enterprise business-process automation solution.*
