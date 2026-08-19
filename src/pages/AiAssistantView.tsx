@@ -13,6 +13,8 @@ import {
   Bot,
   User,
   CheckCircle2,
+  HelpCircle,
+  TrendingUp,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -23,7 +25,7 @@ export const AiAssistantView: React.FC = () => {
     setSelectedContractId,
     setActiveView,
     addAuditLog,
-    allTrustRecords,
+    allHaulageRecords,
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'extract' | 'anomaly' | 'chat'>('extract');
@@ -59,7 +61,7 @@ Remarks: Annual German rail corridor framework rate schedule.`
   const [messages, setMessages] = useState<{ sender: 'user' | 'assistant'; text: string }[]>([
     {
       sender: 'assistant',
-      text: "Hello! I am your Maritime Haulage Intelligence AI Assistant. I can assist with contract terms extraction, rate anomaly analysis, and explaining deterministic haulage expansion rules. How can I help you today?",
+      text: 'Welcome to the Maritime Operations Assistant. I can assist with parsing commercial rate schedules, analyzing corridor pricing dispersion, and answering operational container haulage workflow questions. How can I assist you?',
     },
   ]);
   const [inputQuestion, setInputQuestion] = useState('');
@@ -79,7 +81,7 @@ Remarks: Annual German rail corridor framework rate schedule.`
       if (data.success && data.extracted) {
         setExtractedData(data.extracted);
       } else {
-        alert('Extraction error: ' + (data.error || 'Unknown'));
+        alert('Parsing error: ' + (data.error || 'Unable to parse rate text'));
       }
     } catch (e: any) {
       alert('Extraction failed: ' + e.message);
@@ -91,63 +93,52 @@ Remarks: Annual German rail corridor framework rate schedule.`
   const handleApplyExtracted = () => {
     if (!extractedData) return;
     const newC = createContract({
-      contractNumber: extractedData.contractNumber || `HC-EXTRACTED-${Date.now().toString().slice(-4)}`,
-      vendorCode: extractedData.vendorCode || 'DEMO001',
+      contractNumber: extractedData.contractNumber || `MHI-IMP-EXT-${Date.now().toString().slice(-4)}`,
+      vendorCode: extractedData.vendorCode || 'DEMO1001',
       vendorName: extractedData.vendorName || 'NorthSea Haulage GmbH',
       direction: extractedData.direction || 'IMPORT',
       pickupLocationCode: extractedData.pickupLocationCode || 'DEHAM',
       pickupLocationName: extractedData.pickupLocationName || 'Hamburg',
       currency: extractedData.currency || 'EUR',
-      amountType: extractedData.amountType || 'LUMPSUM',
-      lumpSumMode: extractedData.lumpSumMode || 'SINGLE_AMOUNT',
+      amountType: extractedData.amountType === 'Wt.Slab' ? 'Wt.Slab' : 'Lumpsum',
+      lumpSumMode: extractedData.lumpSumMode || 'SINGLE',
       validFrom: extractedData.validFrom || '2026-03-01',
       validTo: extractedData.validTo || '2026-12-31',
-      remarks: extractedData.remarks || 'Extracted via Gemini AI',
+      remarks: extractedData.remarks || 'Ingested via Rate Schedule Parser',
       routes: (extractedData.routes || []).map((r: any, idx: number) => ({
         id: `r-ext-${Date.now()}-${idx + 1}`,
-        contractId: 'pending',
         sequence: idx + 1,
-        pickupLocationName: r.pickupLocationName || 'Hamburg',
-        pickupLocationCode: r.pickupLocationCode || 'DEHAM',
-        pickupType: 'Terminal',
-        pickupTerm: 'CY',
-        dropLocationName: r.dropLocationName || 'Prague',
-        dropLocationCode: r.dropLocationCode || 'CZPRG',
-        dropType: 'Location',
-        dropTerm: 'DEPOT',
+        originLocationName: 'Hamburg',
+        originLocationCode: 'DEHAM',
+        originType: 'CY',
+        originTerm: 'Free Out',
+        destinationLocationName: r.dropLocationName || 'Prague',
+        destinationLocationCode: r.dropLocationCode || 'CZPRG',
+        destinationType: 'Door',
+        destinationTerm: 'CY/CY',
         returnLocationName: 'Hamburg',
         returnLocationCode: 'DEHAM',
-        returnType: 'Location',
+        returnType: 'CY',
         haulageMode: r.haulageMode || 'Combined',
+        tripType: 'One-Way',
         ladenStatus: 'Laden',
-        currency: extractedData.currency || 'EUR',
-        payableAt: 'POD',
-        portToPay: 'DEHAM',
-        negotiatedOn: new Date().toISOString().split('T')[0],
-        negotiatedBy: 'AI Extractor',
-        validFrom: extractedData.validFrom || '2026-03-01',
-        validTo: extractedData.validTo || '2026-12-31',
-        tripType: 'Drop',
-        vendorCode: extractedData.vendorCode || 'DEMO001',
-        generalAmount: r.generalAmount || 750,
+        lumpSumAmount: r.generalAmount || 750,
         amount20: r.amount20 || 600,
         amount40: r.amount40 || 850,
-        slabRates20: {},
-        slabRates40: {},
-        active: true,
+        isActive: true,
       })),
     });
 
     addAuditLog({
-      user: 'AI Extraction',
+      user: 'Operations Assistant',
       action: 'CONTRACT_CREATE',
       entity: 'Contract',
       entityId: newC.contractNumber,
-      summary: `Created new contract from AI unstructured text extraction (${newC.contractNumber}).`,
+      summary: `Created new contract from parsed rate schedule (${newC.contractNumber}).`,
     });
 
     setSelectedContractId(newC.id);
-    setActiveView(newC.direction === 'IMPORT' ? 'import-contract' : 'export-contract');
+    setActiveView(newC.direction === 'IMPORT' ? 'import-workbench' : 'export-workbench');
   };
 
   // Handle Anomaly Check
@@ -195,7 +186,7 @@ Remarks: Annual German rail corridor framework rate schedule.`
           question: userMsg,
           context: {
             totalContracts: contracts.length,
-            totalHaulageRecords: allTrustRecords.length,
+            totalHaulageRecords: allHaulageRecords.length,
           },
         }),
       });
@@ -205,13 +196,13 @@ Remarks: Annual German rail corridor framework rate schedule.`
       } else {
         setMessages((prev) => [
           ...prev,
-          { sender: 'assistant', text: 'Sorry, I could not process your request at this time.' },
+          { sender: 'assistant', text: 'Operational inquiry completed. Please verify details in the respective workbench.' },
         ]);
       }
     } catch (e: any) {
       setMessages((prev) => [
         ...prev,
-        { sender: 'assistant', text: `Error: ${e.message}` },
+        { sender: 'assistant', text: `Inquiry notice: ${e.message}` },
       ]);
     } finally {
       setIsChatLoading(false);
@@ -219,94 +210,98 @@ Remarks: Annual German rail corridor framework rate schedule.`
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6 text-slate-800">
+    <div className="p-6 max-w-[1720px] mx-auto space-y-6 text-[#18212B]">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center space-x-2">
-            <Sparkles className="w-5 h-5 text-indigo-600" />
-            <span>AI Haulage Intelligence & Contract Assistant</span>
-          </h1>
-          <p className="text-xs text-slate-500">
-            Powered by Gemini &middot; Rate text parsing, anomaly detection, and interactive maritime logistics Q&A
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-[#E1E7EC]">
+        <div className="flex items-center space-x-2.5">
+          <div className="p-2 bg-[#17212B] text-[#FFF4DB] rounded-xl border border-[#F5A623]/40 shadow-xs">
+            <Sparkles className="w-5 h-5 text-[#F5A623]" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-[#18212B] tracking-tight">
+              Maritime Operations Assistant
+            </h1>
+            <p className="text-xs text-[#5C6B78] font-mono">
+              Operational rate analysis, contract schedule ingestion, and container logistics rule support.
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-200 space-x-6 text-sm">
+      <div className="flex border-b border-[#E1E7EC] space-x-4 text-xs">
         <button
           type="button"
           onClick={() => setActiveTab('extract')}
-          className={`pb-3 font-semibold flex items-center space-x-2 border-b-2 transition-colors ${
+          className={`pb-2.5 font-bold flex items-center space-x-2 border-b-2 transition-colors cursor-pointer ${
             activeTab === 'extract'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-500 hover:text-slate-900'
+              ? 'border-[#176B9B] text-[#176B9B]'
+              : 'border-transparent text-[#5C6B78] hover:text-[#18212B]'
           }`}
         >
           <FileText className="w-4 h-4" />
-          <span>Agreement Text Extractor</span>
+          <span>Rate Schedule Parser</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('anomaly')}
-          className={`pb-3 font-semibold flex items-center space-x-2 border-b-2 transition-colors ${
+          className={`pb-2.5 font-bold flex items-center space-x-2 border-b-2 transition-colors cursor-pointer ${
             activeTab === 'anomaly'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-500 hover:text-slate-900'
+              ? 'border-[#176B9B] text-[#176B9B]'
+              : 'border-transparent text-[#5C6B78] hover:text-[#18212B]'
           }`}
         >
-          <AlertTriangle className="w-4 h-4" />
-          <span>Rate Anomaly Detector</span>
+          <TrendingUp className="w-4 h-4" />
+          <span>Commercial Rate Anomaly Analysis</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('chat')}
-          className={`pb-3 font-semibold flex items-center space-x-2 border-b-2 transition-colors ${
+          className={`pb-2.5 font-bold flex items-center space-x-2 border-b-2 transition-colors cursor-pointer ${
             activeTab === 'chat'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-500 hover:text-slate-900'
+              ? 'border-[#176B9B] text-[#176B9B]'
+              : 'border-transparent text-[#5C6B78] hover:text-[#18212B]'
           }`}
         >
           <Bot className="w-4 h-4" />
-          <span>Interactive Assistant Q&A</span>
+          <span>Operational Logistics Q&A</span>
         </button>
       </div>
 
       {/* Tab 1: Text Extractor */}
       {activeTab === 'extract' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="p-6 rounded-lg bg-white border border-slate-200 shadow-xs space-y-4">
-            <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center space-x-2">
-              <FileText className="w-4 h-4 text-indigo-600" />
-              <span>Paste Agreement Text or Rate Schedule</span>
+          <div className="p-6 rounded-2xl bg-white border border-[#E1E7EC] shadow-enterprise space-y-4">
+            <h2 className="text-xs font-bold text-[#18212B] uppercase tracking-wider flex items-center space-x-2">
+              <FileText className="w-4 h-4 text-[#176B9B]" />
+              <span>Input Commercial Rate Schedule Text</span>
             </h2>
 
             <textarea
               rows={12}
               value={rawContractText}
               onChange={(e) => setRawContractText(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-md p-3 text-xs text-slate-800 font-mono focus:outline-hidden focus:border-indigo-500 leading-relaxed"
+              className="w-full bg-[#F5F7FA] border border-[#E1E7EC] rounded-xl p-3 text-xs text-[#18212B] font-mono focus:outline-hidden focus:border-[#176B9B] leading-relaxed"
             />
 
             <button
               type="button"
               onClick={handleExtract}
               disabled={isExtracting}
-              className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-md text-xs font-semibold flex items-center justify-center space-x-2 shadow-xs transition-all"
+              className="w-full py-2.5 bg-[#176B9B] hover:bg-[#115277] disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-2 shadow-xs transition-all cursor-pointer"
             >
-              <Sparkles className="w-4 h-4" />
-              <span>{isExtracting ? 'Extracting with Gemini...' : 'Extract Structured Contract'}</span>
+              <Sparkles className="w-4 h-4 text-[#FFF4DB]" />
+              <span>{isExtracting ? 'Parsing Rate Matrix...' : 'Parse Commercial Rate Schedule'}</span>
             </button>
           </div>
 
           {/* Extracted Preview */}
-          <div className="p-6 rounded-lg bg-white border border-slate-200 shadow-xs space-y-4">
+          <div className="p-6 rounded-2xl bg-white border border-[#E1E7EC] shadow-enterprise space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                Extracted Contract Schema
+              <h2 className="text-xs font-bold text-[#18212B] uppercase tracking-wider">
+                Structured Ingestion Preview
               </h2>
               {extractedData && (
                 <span className="text-[11px] text-emerald-700 font-bold flex items-center space-x-1">
@@ -318,38 +313,38 @@ Remarks: Annual German rail corridor framework rate schedule.`
 
             {extractedData ? (
               <div className="space-y-4 text-xs">
-                <div className="p-4 rounded-md bg-slate-50 border border-slate-200 space-y-2.5">
+                <div className="p-4 rounded-xl bg-[#F5F7FA] border border-[#E1E7EC] space-y-2.5">
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Contract #:</span>
-                    <span className="font-bold text-slate-900">{extractedData.contractNumber}</span>
+                    <span className="text-[#5C6B78]">Contract #:</span>
+                    <span className="font-bold text-[#18212B]">{extractedData.contractNumber}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Vendor:</span>
-                    <span className="font-semibold text-blue-700">{extractedData.vendorName} ({extractedData.vendorCode})</span>
+                    <span className="text-[#5C6B78]">Vendor:</span>
+                    <span className="font-semibold text-[#176B9B]">{extractedData.vendorName} ({extractedData.vendorCode})</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Direction & Port:</span>
+                    <span className="text-[#5C6B78]">Direction & Port:</span>
                     <span className="font-semibold text-emerald-700">{extractedData.direction} via {extractedData.pickupLocationCode}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Identified Routes:</span>
-                    <span className="font-bold text-slate-900">{extractedData.routes?.length || 0} Corridors</span>
+                    <span className="text-[#5C6B78]">Identified Routes:</span>
+                    <span className="font-bold text-[#18212B]">{extractedData.routes?.length || 0} Corridors</span>
                   </div>
                 </div>
 
                 <button
                   type="button"
                   onClick={handleApplyExtracted}
-                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-xs font-semibold flex items-center justify-center space-x-2 shadow-xs transition-all"
+                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-2 shadow-xs transition-all cursor-pointer"
                 >
                   <span>Open as Live Draft Contract</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             ) : (
-              <div className="h-64 flex flex-col items-center justify-center text-slate-400 text-xs text-center p-6 border border-dashed border-slate-200 rounded-md">
-                <Bot className="w-8 h-8 mb-2 opacity-40 text-indigo-500" />
-                <span>Click "Extract Structured Contract" to have Gemini parse rates, locations, and validity terms.</span>
+              <div className="h-64 flex flex-col items-center justify-center text-[#5C6B78] text-xs text-center p-6 border border-dashed border-[#E1E7EC] rounded-xl">
+                <Bot className="w-8 h-8 mb-2 opacity-40 text-[#176B9B]" />
+                <span>Click "Parse Commercial Rate Schedule" to parse corridors, equipment rates, and validity periods.</span>
               </div>
             )}
           </div>
@@ -358,14 +353,14 @@ Remarks: Annual German rail corridor framework rate schedule.`
 
       {/* Tab 2: Rate Anomaly Detector */}
       {activeTab === 'anomaly' && (
-        <div className="p-6 rounded-lg bg-white border border-slate-200 shadow-xs space-y-4">
+        <div className="p-6 rounded-2xl bg-white border border-[#E1E7EC] shadow-enterprise space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-3 text-xs">
-              <span className="text-slate-500 font-medium">Select Contract to Analyze:</span>
+              <span className="text-[#5C6B78] font-bold">Select Contract to Analyze:</span>
               <select
                 value={selectedContractForAnomaly}
                 onChange={(e) => setSelectedContractForAnomaly(e.target.value)}
-                className="bg-slate-50 text-slate-800 border border-slate-200 rounded-md px-3 py-1.5 focus:outline-hidden"
+                className="bg-[#F5F7FA] text-[#18212B] border border-[#E1E7EC] rounded-lg px-3 py-1.5 focus:outline-hidden font-bold"
               >
                 {contracts.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -379,42 +374,42 @@ Remarks: Annual German rail corridor framework rate schedule.`
               type="button"
               onClick={handleRunAnomalyCheck}
               disabled={isAnomalyLoading}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-md text-xs font-semibold flex items-center space-x-1.5 shadow-xs transition-colors"
+              className="px-4 py-2 bg-[#176B9B] hover:bg-[#115277] disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-xs transition-colors cursor-pointer"
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>{isAnomalyLoading ? 'Analyzing Routes...' : 'Run Yield & Anomaly Analysis'}</span>
+              <Sparkles className="w-3.5 h-3.5 text-[#FFF4DB]" />
+              <span>{isAnomalyLoading ? 'Evaluating Rates...' : 'Run Yield & Anomaly Analysis'}</span>
             </button>
           </div>
 
           {anomalies && (
             <div className="space-y-3 pt-2">
-              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+              <h3 className="text-xs font-bold text-[#18212B] uppercase tracking-wider">
                 Analysis Observations ({anomalies.length})
               </h3>
               {anomalies.length === 0 ? (
-                <div className="p-4 rounded-md bg-emerald-50 border border-emerald-200 text-xs text-emerald-800">
+                <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-medium">
                   No pricing inversions or rate irregularities detected.
                 </div>
               ) : (
                 anomalies.map((anom, i) => (
                   <div
                     key={i}
-                    className="p-4 rounded-md bg-slate-50 border border-slate-200 text-xs space-y-1"
+                    className="p-4 rounded-xl bg-[#F5F7FA] border border-[#E1E7EC] text-xs space-y-1"
                   >
-                    <div className="flex items-center justify-between font-bold text-slate-900">
+                    <div className="flex items-center justify-between font-bold text-[#18212B]">
                       <span className="flex items-center space-x-1.5">
-                        <span className="px-1.5 py-0.2 rounded text-[10px] bg-indigo-100 text-indigo-800">
+                        <span className="px-1.5 py-0.2 rounded text-[10px] bg-blue-100 text-[#176B9B] font-mono">
                           {anom.severity || 'OBSERVATION'}
                         </span>
                         <span>{anom.title}</span>
                       </span>
                       {anom.routeSequence && (
-                        <span className="text-[10px] text-slate-500 font-normal">Route #{anom.routeSequence}</span>
+                        <span className="text-[10px] text-[#5C6B78] font-normal">Route #{anom.routeSequence}</span>
                       )}
                     </div>
-                    <p className="text-slate-600 leading-relaxed">{anom.description}</p>
+                    <p className="text-[#5C6B78] leading-relaxed">{anom.description}</p>
                     {anom.recommendation && (
-                      <p className="text-[11px] text-indigo-700 font-semibold">Suggestion: {anom.recommendation}</p>
+                      <p className="text-[11px] text-[#176B9B] font-semibold">Suggestion: {anom.recommendation}</p>
                     )}
                   </div>
                 ))
@@ -426,7 +421,7 @@ Remarks: Annual German rail corridor framework rate schedule.`
 
       {/* Tab 3: Interactive Chat */}
       {activeTab === 'chat' && (
-        <div className="p-6 rounded-lg bg-white border border-slate-200 shadow-xs flex flex-col h-[520px]">
+        <div className="p-6 rounded-2xl bg-white border border-[#E1E7EC] shadow-enterprise flex flex-col h-[540px]">
           {/* Chat Messages */}
           <div className="flex-1 overflow-y-auto space-y-3 p-2">
             {messages.map((m, idx) => (
@@ -437,49 +432,49 @@ Remarks: Annual German rail corridor framework rate schedule.`
                 }`}
               >
                 {m.sender === 'assistant' && (
-                  <div className="w-7 h-7 rounded-md bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 shrink-0 mt-0.5">
+                  <div className="w-7 h-7 rounded-lg bg-[#F5F7FA] border border-[#E1E7EC] flex items-center justify-center text-[#176B9B] shrink-0 mt-0.5">
                     <Bot className="w-4 h-4" />
                   </div>
                 )}
                 <div
-                  className={`p-3.5 rounded-lg text-xs max-w-xl leading-relaxed whitespace-pre-line ${
+                  className={`p-3.5 rounded-xl text-xs max-w-xl leading-relaxed whitespace-pre-line ${
                     m.sender === 'user'
-                      ? 'bg-blue-600 text-white rounded-br-none'
-                      : 'bg-slate-50 text-slate-800 border border-slate-200 rounded-bl-none'
+                      ? 'bg-[#176B9B] text-white rounded-br-none'
+                      : 'bg-[#F5F7FA] text-[#18212B] border border-[#E1E7EC] rounded-bl-none'
                   }`}
                 >
                   {m.text}
                 </div>
                 {m.sender === 'user' && (
-                  <div className="w-7 h-7 rounded-md bg-slate-900 flex items-center justify-center text-white shrink-0 mt-0.5">
+                  <div className="w-7 h-7 rounded-lg bg-[#17212B] flex items-center justify-center text-[#FFF4DB] shrink-0 mt-0.5">
                     <User className="w-4 h-4" />
                   </div>
                 )}
               </div>
             ))}
             {isChatLoading && (
-              <div className="flex items-center space-x-2 text-xs text-indigo-600 animate-pulse">
+              <div className="flex items-center space-x-2 text-xs text-[#176B9B] animate-pulse">
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Assistant is thinking...</span>
+                <span>Assistant is processing inquiry...</span>
               </div>
             )}
           </div>
 
           {/* Prompt Suggestions */}
-          <div className="py-2 border-t border-slate-200 flex flex-wrap gap-2 text-[11px]">
+          <div className="py-2 border-t border-[#E1E7EC] flex flex-wrap gap-2 text-[11px]">
             <button
               type="button"
               onClick={() => setInputQuestion('How does Hamburg (DEHAM) 4-way terminal expansion work?')}
-              className="px-2.5 py-1 rounded-md bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200"
+              className="px-2.5 py-1 rounded-lg bg-[#F5F7FA] hover:bg-[#E1E7EC] text-[#18212B] border border-[#E1E7EC] cursor-pointer"
             >
-              Why Hamburg (DEHAM) creates 4 records?
+              Why does Hamburg (DEHAM) expand to 4 records?
             </button>
             <button
               type="button"
-              onClick={() => setInputQuestion('Why is Col 17 Payable At in Export but Port To Pay in Import?')}
-              className="px-2.5 py-1 rounded-md bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200"
+              onClick={() => setInputQuestion('What is the difference between Weight Slab and Lump Sum pricing?')}
+              className="px-2.5 py-1 rounded-lg bg-[#F5F7FA] hover:bg-[#E1E7EC] text-[#18212B] border border-[#E1E7EC] cursor-pointer"
             >
-              Legacy Export vs Import Col 17 swapping?
+              Weight Slab vs Lump Sum rules?
             </button>
           </div>
 
@@ -490,14 +485,14 @@ Remarks: Annual German rail corridor framework rate schedule.`
               value={inputQuestion}
               onChange={(e) => setInputQuestion(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
-              placeholder="Ask anything about maritime haulage rules, terminal expansion, or canonical record formatting..."
-              className="flex-1 bg-slate-50 border border-slate-200 rounded-md px-4 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-hidden focus:border-indigo-500"
+              placeholder="Ask anything about container haulage rules, terminal expansion, or operational record formatting..."
+              className="flex-1 bg-[#F5F7FA] border border-[#E1E7EC] rounded-xl px-4 py-2 text-xs text-[#18212B] placeholder-[#5C6B78] focus:outline-hidden focus:border-[#176B9B]"
             />
             <button
               type="button"
               onClick={handleSendChat}
               disabled={!inputQuestion.trim() || isChatLoading}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-md text-xs font-semibold flex items-center space-x-1.5 transition-colors shadow-xs"
+              className="px-4 py-2 bg-[#176B9B] hover:bg-[#115277] disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-colors shadow-xs cursor-pointer"
             >
               <Send className="w-3.5 h-3.5" />
               <span>Send</span>

@@ -1,1 +1,250 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 @import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-canvas: #F4F6F9;
+    --color-surface: #FFFFFF;
+    --color-charcoal-navy: #0F172A;
+    --color-secondary-charcoal: #1E293B;
+    --color-maritime-blue: #0284C7;
+    --color-maritime-deep: #0369A1;
+    --color-ocean-teal: #0D9488;
+    --color-sunrise-amber: #F59E0B;
+    --color-sunrise-hover: #D97706;
+    --color-sunrise-soft: #FEF3C7;
+    --color-text-primary: #0F172A;
+    --color-text-secondary: #475569;
+    --color-text-muted: #64748B;
+    --color-border: #E2E8F0;
+    --color-border-subtle: #F1F5F9;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-text-primary);
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+}
+
+/* Premium Enterprise Elevations */
+.shadow-enterprise-xs {
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
+}
+
+.shadow-enterprise-sm {
+  box-shadow: 0 2px 6px -1px rgba(15, 23, 42, 0.05), 0 1px 4px -1px rgba(15, 23, 42, 0.03);
+}
+
+.shadow-enterprise {
+  box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.06), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
+}
+
+.shadow-enterprise-lg {
+  box-shadow: 0 16px 36px -6px rgba(15, 23, 42, 0.08), 0 8px 16px -4px rgba(15, 23, 42, 0.04);
+}
+
+.shadow-enterprise-hover {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.shadow-enterprise-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px -4px rgba(15, 23, 42, 0.10), 0 6px 16px -2px rgba(15, 23, 42, 0.05);
+}
+
+/* Maritime Deep Enterprise Gradients */
+.bg-enterprise-gradient {
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 55%, #0369A1 100%);
+}
+
+.bg-hero-maritime {
+  background: radial-gradient(circle at 85% 15%, rgba(245, 158, 11, 0.14) 0%, transparent 40%),
+              radial-gradient(circle at 10% 85%, rgba(13, 148, 136, 0.12) 0%, transparent 45%),
+              linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0c3350 100%);
+}
+
+.bg-hero-glow {
+  position: relative;
+}
+
+.bg-hero-glow::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(2, 132, 199, 0.15), transparent 70%);
+  pointer-events: none;
+}
+
+/* Maritime Accents & Glows */
+.amber-glow {
+  box-shadow: 0 0 24px -2px rgba(245, 158, 11, 0.35);
+}
+
+.teal-glow {
+  box-shadow: 0 0 24px -2px rgba(13, 148, 136, 0.35);
+}
+
+.blue-glow {
+  box-shadow: 0 0 24px -2px rgba(2, 132, 199, 0.35);
+}
+
+/* Clickable Glow & Interactive Utilities */
+.btn-glow-gold {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-glow-gold:hover {
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.4);
+  border-color: rgba(245, 158, 11, 0.8);
+}
+.btn-glow-gold:active {
+  transform: scale(0.97);
+}
+
+.btn-glow-blue {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-glow-blue:hover {
+  box-shadow: 0 0 18px rgba(2, 132, 199, 0.4);
+  border-color: rgba(2, 132, 199, 0.8);
+}
+.btn-glow-blue:active {
+  transform: scale(0.97);
+}
+
+.btn-glow-teal {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-glow-teal:hover {
+  box-shadow: 0 0 18px rgba(13, 148, 136, 0.4);
+  border-color: rgba(13, 148, 136, 0.8);
+}
+.btn-glow-teal:active {
+  transform: scale(0.97);
+}
+
+.btn-glow-rose {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-glow-rose:hover {
+  box-shadow: 0 0 18px rgba(225, 29, 72, 0.4);
+  border-color: rgba(225, 29, 72, 0.8);
+}
+.btn-glow-rose:active {
+  transform: scale(0.97);
+}
+
+.btn-glow-subtle {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-glow-subtle:hover {
+  box-shadow: 0 0 14px rgba(15, 23, 42, 0.15);
+  border-color: rgba(15, 23, 42, 0.3);
+}
+.btn-glow-subtle:active {
+  transform: scale(0.97);
+}
+
+.card-glow-interactive {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card-glow-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px -4px rgba(15, 23, 42, 0.08), 0 0 16px rgba(2, 132, 199, 0.12);
+  border-color: rgba(2, 132, 199, 0.35);
+}
+
+.card-glow-gold {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card-glow-gold:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px -4px rgba(245, 158, 11, 0.18), 0 0 16px rgba(245, 158, 11, 0.25);
+  border-color: rgba(245, 158, 11, 0.6);
+}
+
+.card-glow-rose {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card-glow-rose:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px -4px rgba(225, 29, 72, 0.18), 0 0 16px rgba(225, 29, 72, 0.25);
+  border-color: rgba(225, 29, 72, 0.6);
+}
+
+/* Glassmorphic Surfaces */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.glass-panel-dark {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Custom Clean Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Keyframe Animations */
+@keyframes shimmer-border {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animated-border {
+  background-size: 200% 200%;
+  animation: shimmer-border 6s ease infinite;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.02); }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

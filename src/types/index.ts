@@ -4,38 +4,52 @@
  */
 
 export type HaulageDirection = 'IMPORT' | 'EXPORT';
-
 export type ContractStatus =
   | 'DRAFT'
-  | 'VALIDATION_FAILED'
+  | 'ACTIVE'
   | 'VALIDATED'
-  | 'PROCESSED'
   | 'GENERATED'
-  | 'EXPORTED'
-  | 'ARCHIVED';
-
+  | 'EXPIRED'
+  | 'PROCESSED'
+  | 'EXPORTED';
+export type HaulageMode = 'Road' | 'Rail' | 'Barge' | 'Combined' | string;
+export type TripType =
+  | 'One-Way'
+  | 'Round-Trip'
+  | 'Live Load'
+  | 'Drop'
+  | 'Pick Up'
+  | 'Drop and Pick Up'
+  | string;
+export type LadenStatus = 'Laden' | 'Empty' | 'LDN' | 'MTY' | string;
+export type AmountType = 'Lumpsum' | 'Wt.Slab' | 'LUMPSUM' | 'WT_SLAB' | string;
+export type LumpSumMode =
+  | 'SINGLE'
+  | 'EQUIPMENT_SPECIFIC'
+  | 'SINGLE_AMOUNT'
+  | 'SEPARATE_AMOUNTS'
+  | string;
+export type PayableAt = 'POL' | 'POD' | string;
+export type EquipmentSize = '20s' | '40s' | string;
 export type PickupDropReturnType =
+  | 'CY'
+  | 'SD'
+  | 'CFS'
+  | 'Door'
+  | 'Ramp'
   | 'Location'
   | 'Terminal'
   | 'Depot'
   | 'Zip/Pin'
-  | 'ZipRange';
-
-export type HaulageMode = 'Road' | 'Rail' | 'Barge' | 'Combined';
-
-export type TripType = 'Pick Up' | 'Drop' | 'Drop and Pick Up' | 'Live Load';
-
-export type AmountType = 'LUMPSUM' | 'WEIGHT_SLAB';
-
-export type LumpSumMode = 'SINGLE_AMOUNT' | 'EQUIPMENT_SPECIFIC';
-
-export type EquipmentSize = '20s' | '40s';
-
-export type LadenStatus = 'Laden' | 'Empty';
-
-export type PayableAt = 'POL' | 'POD';
-
+  | 'ZipRange'
+  | string;
 export type PickupDropTerm =
+  | 'Free Out'
+  | 'Free In'
+  | 'Liner Out'
+  | 'Liner In'
+  | 'CY/CY'
+  | 'Door/Door'
   | 'CY'
   | 'DEPOT'
   | 'FI'
@@ -44,105 +58,169 @@ export type PickupDropTerm =
   | 'FT'
   | 'HOOK'
   | 'ST'
-  | 'TACKLE';
-
-export type UserRole = 'Admin' | 'Analyst' | 'Viewer';
-
+  | 'TACKLE'
+  | string;
+export type UserRole = 'Executive' | 'Analyst' | 'Auditor' | 'Admin' | string;
 export type AppMode = 'DEMO' | 'PRIVATE';
+
+export interface WeightSlabBand {
+  index?: number;
+  band?: number;
+  tier?: number;
+  from?: number;
+  to?: number;
+  fromTon?: number;
+  toTon?: number;
+  label?: string;
+}
 
 export interface Vendor {
   id: string;
   vendorCode: string;
   vendorName: string;
-  active: boolean;
-  effectiveFrom: string;
-  effectiveTo: string;
+  countryCode?: string;
+  currency?: string;
+  effectiveFrom?: string;
+  effectiveTo?: string;
   notes?: string;
+  isActive?: boolean;
+  active?: boolean;
+  contactEmail?: string;
+  paymentTermsDays?: number;
+  carrierType?: 'Road Haulier' | 'Rail Operator' | 'Barge Carrier' | 'Intermodal' | string;
 }
 
 export interface LocationMaster {
   id: string;
+  unLocode?: string;
+  locationCode?: string;
   locationName: string;
-  locationCode: string;
+  locationType?: string;
   countryCode: string;
-  countryName: string;
+  countryName?: string;
+  stateCode?: string;
   state?: string;
   city?: string;
-  locationType: 'Port' | 'Inland City' | 'Rail Hub' | 'Border Point';
-  active: boolean;
+  isSeaport?: boolean;
+  isInland?: boolean;
+  defaultTransitDays?: number;
+  active?: boolean;
+  isActive?: boolean;
 }
 
 export interface TerminalFacility {
   id: string;
-  facilityName: string;
+  unLocode?: string;
+  portCode?: string;
+  locationCode?: string;
   facilityCode: string;
-  facilityType: 'Terminal' | 'Depot' | 'Rail Terminal' | 'CY' | 'Inland Depot';
-  portCode: string;
-  locationCode: string;
-  city: string;
-  countryCode: string;
-  active: boolean;
+  facilityName: string;
+  facilityType: 'Seaport Berth' | 'Rail Ramp' | 'Inland Depot' | 'Barge Terminal' | string;
+  city?: string;
+  countryCode?: string;
+  isActive?: boolean;
+  active?: boolean;
 }
 
 export interface PortEquipmentMapping {
   id: string;
-  portCode: string;
-  portName: string;
-  terminalName: string;
+  portCode?: string;
+  portName?: string;
+  sourceGroupCode?: string;
+  sourceLocationName?: string;
+  direction?: HaulageDirection;
   terminalCode: string;
+  terminalName: string;
+  equipmentCode?: string;
   equipmentSize: EquipmentSize;
-  equipmentCode: string;
-  compositeTerminalEquipmentCode: string;
-  compositePortEquipmentCode: string;
-  importEnabled: boolean;
-  exportEnabled: boolean;
-  exportOutputCode: string; // e.g. EDEHAM, EDEBRV
-  active: boolean;
-}
-
-export interface WeightSlabBand {
-  index: number; // 1 to 5
-  from: number;
-  to: number;
-  label: string; // e.g. "0-13 t" or "< 13t"
+  pickupDropType?: PickupDropReturnType;
+  pickupDropTerm?: PickupDropTerm;
+  transitTime?: string;
+  noOfEqpUnits?: string;
+  exportOutputCode?: string;
+  compositePortEquipmentCode?: string;
+  compositeTerminalEquipmentCode?: string;
+  importEnabled?: boolean;
+  exportEnabled?: boolean;
+  isActive?: boolean;
+  active?: boolean;
 }
 
 export interface ContractRoute {
   id: string;
-  contractId: string;
+  contractId?: string;
   sequence: number;
-  pickupLocationName: string;
-  pickupLocationCode: string;
-  pickupType: PickupDropReturnType;
+  // Route geometry
+  originLocationName?: string;
+  originLocationCode?: string;
+  pickupLocationName?: string;
+  pickupLocationCode?: string;
+  originType?: PickupDropReturnType;
+  originTerm?: PickupDropTerm;
+  pickupType?: PickupDropReturnType;
+  pickupTerm?: PickupDropTerm;
   pickupFacilityCode?: string;
-  pickupTerm: PickupDropTerm;
-  dropLocationName: string;
-  dropLocationCode: string;
-  dropType: PickupDropReturnType;
+  originZipTerminal?: string;
+  destinationLocationName?: string;
+  destinationLocationCode?: string;
+  dropLocationName?: string;
+  dropLocationCode?: string;
+  destinationType?: PickupDropReturnType;
+  destinationTerm?: PickupDropTerm;
+  dropType?: PickupDropReturnType;
+  dropTerm?: PickupDropTerm;
   dropFacilityCode?: string;
-  dropTerm: PickupDropTerm;
-  returnLocationName: string;
-  returnLocationCode: string;
-  returnType: PickupDropReturnType;
+  destinationZipTerminal?: string;
+  returnLocationName?: string;
+  returnLocationCode?: string;
+  returnType?: PickupDropReturnType;
+  returnTerm?: PickupDropTerm;
   returnFacilityCode?: string;
-  haulageMode: HaulageMode;
-  ladenStatus: LadenStatus;
-  currency: string;
-  payableAt: PayableAt;
-  portToPay: string;
-  negotiatedOn: string;
-  negotiatedBy: string;
-  validFrom: string;
-  validTo: string;
-  tripType: TripType;
-  vendorCode: string;
-  remarks?: string;
+  returnZipTerminal?: string;
+  viaHubLocationCode?: string;
+  haulageMode?: HaulageMode;
+  tripType?: TripType;
+  ladenStatus?: LadenStatus;
+  transitTimeDays?: number;
+  transitTime?: string;
+  noOfEqpUnits?: string;
+  currency?: string;
+  payableAt?: string;
+  portToPay?: string;
+  negotiatedOn?: string;
+  negotiatedBy?: string;
+  validFrom?: string;
+  validTo?: string;
+  vendorCode?: string;
+  // Pricing amounts
+  lumpSumAmount?: number;
   generalAmount?: number;
   amount20?: number;
   amount40?: number;
-  slabRates20: Record<number, number>; // index 1..5 -> rate
-  slabRates40: Record<number, number>; // index 1..5 -> rate
-  active: boolean;
+  // Weight slab pricing (5 bands each for 20s and 40s)
+  rate20_slab1?: number;
+  rate20_slab2?: number;
+  rate20_slab3?: number;
+  rate20_slab4?: number;
+  rate20_slab5?: number;
+  rate40_slab1?: number;
+  rate40_slab2?: number;
+  rate40_slab3?: number;
+  rate40_slab4?: number;
+  rate40_slab5?: number;
+  slabRates20?: Record<string, number>;
+  slabRates40?: Record<string, number>;
+  // Metadata & restrictions
+  remarks?: string;
+  insuranceNo?: string;
+  insuranceFromDate?: string;
+  insuranceToDate?: string;
+  heightRestrictionMm?: number;
+  weightRestrictionTon?: number;
+  widthRestrictionMm?: number;
+  specialInstructions?: string;
+  isActive?: boolean;
+  active?: boolean;
 }
 
 export interface ContractHeader {
@@ -353,12 +431,53 @@ export interface AuditEntry {
 }
 
 export interface SystemSettings {
+  // Operational Preferences
+  defaultCurrency?: string;
+  defaultDateFormat?: string;
+  weightUnit?: 'Tonnes' | 'Kilograms';
+  defaultEquipmentView?: 'ALL' | '20s' | '40s';
+  
+  // Workbench Preferences
+  defaultOpeningWorkbench?: string;
+  defaultHaulageMode?: HaulageMode;
+  defaultAmountType?: AmountType;
+  defaultLadenStatus?: LadenStatus;
+  defaultPayableAt?: PayableAt;
+  defaultRowsAdded?: number;
+  rememberLastContract?: boolean;
+
+  // Table & Grid Preferences
+  compactGridDensity?: boolean;
+  freezeKeyColumns?: boolean;
+  rowsPerPage?: number;
+  showInheritedFields?: boolean;
+  highlightEditableCells?: boolean;
+
+  // Analytics Preferences
+  defaultAnalyticsPeriod?: string;
+  defaultCurrencyFilter?: string;
+  showZeroRateSlabs?: boolean;
+  showIncompleteContracts?: boolean;
+
+  // Export Preferences
+  defaultExportFormat?: 'XLSX' | 'CSV' | 'JSON';
+  includeColumnHeaders?: boolean;
+  includeEmptyOptionalFields?: boolean;
+  filenamePattern?: string;
+
+  // Notifications
+  notifyContractExpiry?: boolean;
+  notifyMissingRates?: boolean;
+  notifyValidationErrors?: boolean;
+  notifyProcessingComplete?: boolean;
+  notifyDataQualityAlerts?: boolean;
+
+  // Core System
   standardizedExportMode: boolean;
   startRecordId: number;
   activeRole: UserRole;
   appMode: AppMode;
   theme: 'light' | 'dark';
-  // Aliases for compatibility
   legacyTrustCompatibility?: boolean;
   startTrustId?: number;
 }

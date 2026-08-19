@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/Header';
 import { Navigation } from './components/Navigation';
@@ -21,77 +22,104 @@ import { AiAssistantView } from './pages/AiAssistantView';
 import { AuditTrailView } from './pages/AuditTrailView';
 import { RegressionTestsView } from './pages/RegressionTestsView';
 import { SettingsView } from './pages/SettingsView';
+import { ProcessingEngineView } from './pages/ProcessingEngineView';
+import { HelpView } from './pages/HelpView';
 
 const MainContent: React.FC = () => {
   const { activeView, inspectedRecord, setInspectedRecord } = useApp();
 
   const renderCurrentView = () => {
     switch (activeView) {
+      case 'processing-engine':
+      case 'engine':
+      case 'processing':
+        return <ProcessingEngineView key="processing-engine" />;
+
       case 'import-workbench':
       case 'import-contract':
       case 'import':
-        return <ImportWorkbench />;
+        return <ImportWorkbench key="import-workbench" />;
 
       case 'export-workbench':
       case 'export-contract':
       case 'export':
-        return <ExportWorkbench />;
+        return <ExportWorkbench key="export-workbench" />;
 
       case 'generated-trust':
-        return <GeneratedTrustRecords />;
+      case 'generated-haulage':
+      case 'records':
+        return <GeneratedTrustRecords key="generated-haulage" />;
 
       case 'weight-slabs':
-        return <WeightSlabDataView />;
+      case 'weight-slab-data':
+      case 'analytics':
+        return <WeightSlabDataView key="weight-slabs" />;
 
       case 'contracts':
-        return <ContractList />;
+        return <ContractList key="contracts" />;
 
       case 'dashboard':
-        return <Dashboard />;
+        return <Dashboard key="dashboard" />;
 
       case 'regression-tests':
-        return <RegressionTestsView />;
+        return <RegressionTestsView key="regression-tests" />;
 
       case 'traceability':
-        return <AuditTrailView />;
+      case 'audit-trail':
+        return <AuditTrailView key="audit-trail" />;
 
       case 'vendors':
-        return <MasterDataAdmin initialTab="vendors" />;
+        return <MasterDataAdmin key="vendors" initialTab="vendors" />;
 
       case 'master-data':
-        return <MasterDataAdmin />;
-
-      case 'audit-trail':
-        return <AuditTrailView />;
+        return <MasterDataAdmin key="master-data" />;
 
       case 'migration':
-        return <DataMigration />;
+        return <DataMigration key="migration" />;
 
       case 'ai-assistant':
-        return <AiAssistantView />;
+        return <AiAssistantView key="ai-assistant" />;
 
       case 'settings':
-        return <SettingsView />;
+        return <SettingsView key="settings" />;
+
+      case 'help-docs':
+      case 'help':
+      case 'docs':
+        return <HelpView key="help-docs" />;
 
       case 'portfolio-overview':
-        return <PortfolioOverview />;
+      case 'portfolio':
+      case 'overview':
+        return <PortfolioOverview key="portfolio-overview" />;
 
       default:
-        return <ImportWorkbench />;
+        return <PortfolioOverview key="default-view" />;
     }
   };
 
   return (
-    <div className="h-screen w-screen bg-[#f1f5f9] text-slate-800 flex flex-col font-sans overflow-hidden">
+    <div className="h-screen w-screen bg-[#F4F6F9] text-[#0F172A] flex flex-col font-sans overflow-hidden">
       <Header />
       <div className="flex flex-1 overflow-hidden">
         <Navigation />
-        <main className="flex-1 overflow-y-auto bg-[#f1f5f9] pb-16">
-          {renderCurrentView()}
+        <main className="flex-1 overflow-y-auto bg-[#F4F6F9] pb-16 relative">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeView}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full min-h-full"
+            >
+              {renderCurrentView()}
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
 
-      {/* Deep Record Traceability & AI Explanation Drawer */}
+      {/* Deep Record Traceability & Operational Explanation Drawer */}
       <ExplainRecordDrawer
         record={inspectedRecord}
         onClose={() => setInspectedRecord(null)}

@@ -4,12 +4,16 @@
  */
 
 import React, { useState } from 'react';
+import { motion } from 'motion/react';
 import * as XLSX from 'xlsx';
 import {
   UploadCloud,
   FileSpreadsheet,
   CheckCircle2,
   ArrowRight,
+  Database,
+  Layers,
+  Sparkles,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -70,7 +74,7 @@ export const DataMigration: React.FC = () => {
     });
 
     addAuditLog({
-      user: 'Admin Action',
+      user: 'Operations Lead',
       action: 'DATA_MIGRATION',
       entity: 'Workbook',
       entityId: fileName || 'LegacyFile.xlsx',
@@ -82,34 +86,48 @@ export const DataMigration: React.FC = () => {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6 text-slate-800">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="p-6 sm:p-8 max-w-7xl mx-auto space-y-6 text-[#0F172A]"
+    >
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center space-x-2">
-            <span>Legacy Data Migration & Workbook Ingestion</span>
-          </h1>
-          <p className="text-xs text-slate-500">
-            Ingest and normalize legacy Excel worksheets (.xlsx, .xlsm, .csv) into modern typed contracts
-          </p>
+          <div className="flex items-center space-x-3">
+            <div className="p-2.5 bg-[#0F172A] text-[#FEF3C7] rounded-xl border border-[#F59E0B]/40 shadow-xs">
+              <Database className="w-5 h-5 text-[#F59E0B]" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-extrabold text-[#0F172A] tracking-tight">
+                Legacy Data Migration & Ingestion
+              </h1>
+              <p className="text-xs text-[#64748B] font-medium mt-0.5">
+                Ingest and normalize legacy haulage rate sheets (.xlsx, .xlsm, .csv) into modern typed contracts
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Upload Box */}
-      <div className="p-8 rounded-lg bg-white border-2 border-dashed border-slate-300 text-center space-y-4 hover:border-blue-500 transition-colors shadow-xs">
-        <div className="w-12 h-12 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 mx-auto">
-          <UploadCloud className="w-6 h-6" />
+      <motion.div
+        whileHover={{ scale: 1.005 }}
+        className="p-8 rounded-3xl bg-white border-2 border-dashed border-slate-300 text-center space-y-4 hover:border-[#0284C7] transition-all shadow-enterprise"
+      >
+        <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-[#0284C7] mx-auto shadow-xs">
+          <UploadCloud className="w-7 h-7" />
         </div>
 
-        <div className="max-w-md mx-auto space-y-1">
-          <h2 className="text-sm font-bold text-slate-900">Upload Legacy Haulage Contract Workbook</h2>
-          <p className="text-xs text-slate-500">
-            Supports legacy formats with sheets like <code className="text-blue-600 font-semibold">ImportSheet</code>, <code className="text-blue-600 font-semibold">ExportSheet</code>, <code className="text-amber-700 font-semibold">wtsbimport</code>, or CSV tables.
+        <div className="max-w-md mx-auto space-y-1.5">
+          <h2 className="text-sm font-bold text-[#0F172A]">Upload Legacy Haulage Contract Workbook</h2>
+          <p className="text-xs text-[#64748B] leading-relaxed">
+            Supports legacy formats with sheets like <code className="text-[#0284C7] font-semibold font-mono">ImportSheet</code>, <code className="text-[#0284C7] font-semibold font-mono">ExportSheet</code>, <code className="text-[#D97706] font-semibold font-mono">wtsbimport</code>, or CSV tables.
           </p>
         </div>
 
         <div>
-          <label className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-md text-xs font-semibold cursor-pointer inline-flex items-center space-x-2 shadow-xs transition-colors">
+          <label className="px-5 py-2.5 bg-[#0284C7] hover:bg-[#0369A1] text-white rounded-xl text-xs font-bold cursor-pointer inline-flex items-center space-x-2 shadow-xs transition-all active:scale-95">
             <span>Select File (.xlsx, .xlsm, .csv)</span>
             <input
               type="file"
@@ -121,72 +139,73 @@ export const DataMigration: React.FC = () => {
         </div>
 
         {fileName && (
-          <div className="text-xs text-emerald-700 font-mono flex items-center justify-center space-x-1.5 pt-2">
+          <div className="text-xs text-emerald-700 font-mono font-bold flex items-center justify-center space-x-1.5 pt-2">
             <CheckCircle2 className="w-4 h-4" />
             <span>Loaded: {fileName}</span>
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Migration Analysis Results */}
       {parsedSummary && (
-        <div className="p-6 rounded-lg bg-white border border-slate-200 shadow-xs space-y-4 animate-in fade-in duration-200">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-enterprise space-y-5"
+        >
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center space-x-2">
+            <h2 className="text-xs font-bold text-[#64748B] uppercase tracking-wider flex items-center space-x-2 font-mono">
               <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
               <span>Workbook Structure Inventory</span>
             </h2>
-            <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
+            <span className="text-xs font-mono px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 font-bold border border-emerald-200">
               Verified 100% Deterministic Parsing
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-            <div className="p-4 rounded-md bg-slate-50 border border-slate-200 space-y-1">
-              <span className="text-slate-500 font-medium">Identified Sheets ({sheetsFound.length})</span>
-              <div className="font-mono text-slate-900 flex flex-wrap gap-1 mt-1">
-                {sheetsFound.map((s) => (
-                  <span key={s} className="px-2 py-0.5 rounded bg-white text-blue-700 border border-slate-200 text-[11px] shadow-2xs">
-                    {s}
-                  </span>
-                ))}
-              </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+              <span className="text-[10px] uppercase font-bold text-[#64748B] block font-mono">Sheets Detected</span>
+              <span className="text-xl font-bold font-mono text-[#0F172A] mt-1 block">{parsedSummary.totalSheets}</span>
             </div>
 
-            <div className="p-4 rounded-md bg-slate-50 border border-slate-200 space-y-1">
-              <span className="text-slate-500 font-medium">Target Direction & Vendor</span>
-              <div className="font-bold text-slate-900 text-sm">
-                {parsedSummary.recognizedType}
-              </div>
-              <div className="text-slate-500">
-                {parsedSummary.vendorName} ({parsedSummary.vendorCode})
-              </div>
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+              <span className="text-[10px] uppercase font-bold text-[#64748B] block font-mono">Recognized Direction</span>
+              <span className="text-xl font-bold text-[#0284C7] mt-1 block">
+                {parsedSummary.recognizedType === 'EXPORT_LEGACY' ? 'Export' : 'Import'}
+              </span>
             </div>
 
-            <div className="p-4 rounded-md bg-slate-50 border border-slate-200 space-y-1">
-              <span className="text-slate-500 font-medium">Proposed Action</span>
-              <div className="font-bold text-emerald-700">
-                {parsedSummary.suggestedAction}
-              </div>
-              <div className="text-slate-500">
-                {parsedSummary.hasWtSlab ? 'With 5-band weight tiers' : 'Standard Lump Sum rates'}
-              </div>
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+              <span className="text-[10px] uppercase font-bold text-[#64748B] block font-mono">Weight Slabs</span>
+              <span className="text-xl font-bold text-emerald-700 mt-1 block">
+                {parsedSummary.hasWtSlab ? 'Present' : 'None'}
+              </span>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+              <span className="text-[10px] uppercase font-bold text-[#64748B] block font-mono">Detected Rows</span>
+              <span className="text-xl font-bold font-mono text-[#0F172A] mt-1 block">{parsedSummary.detectedRows}</span>
             </div>
           </div>
 
-          {/* Action Button */}
-          <div className="pt-2 flex justify-end">
+          <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <span className="text-xs font-bold text-[#0284C7] block">Ready to Ingest into Master Record</span>
+              <p className="text-[11px] text-[#64748B]">Vendor: {parsedSummary.vendorName} ({parsedSummary.vendorCode})</p>
+            </div>
+
             <button
               type="button"
               onClick={handleApproveMigration}
-              className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-xs font-semibold flex items-center space-x-2 shadow-xs transition-all"
+              className="px-5 py-2.5 bg-[#0284C7] hover:bg-[#0369A1] text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-xs transition-all cursor-pointer active:scale-95"
             >
-              <span>Import as New Draft Contract</span>
-              <ArrowRight className="w-4 h-4" />
+              <span>Approve Ingestion & Open Workbench</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
-        </div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 };

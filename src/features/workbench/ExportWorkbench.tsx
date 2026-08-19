@@ -21,10 +21,16 @@ import {
 import {
   ArrowUpRight,
   FileCheck2,
+  AlertTriangle,
   CheckCircle2,
   Table,
+  Layers,
   ArrowRight,
   Sparkles,
+  Info,
+  Play,
+  RotateCcw,
+  BookOpen,
 } from 'lucide-react';
 
 export const ExportWorkbench: React.FC = () => {
@@ -111,6 +117,7 @@ export const ExportWorkbench: React.FC = () => {
     return { canRun: true, reason: '' };
   }, [localContract]);
 
+  // Handle Header field change
   const handleHeaderChange = (updates: Partial<ContractHeader>) => {
     const nextContract: ContractFull = {
       ...localContract,
@@ -121,6 +128,7 @@ export const ExportWorkbench: React.FC = () => {
     updateContract(nextContract);
   };
 
+  // Handle Amount Type change
   const handleAmountTypeChange = (newAmountType: AmountType) => {
     const nextContract: ContractFull = {
       ...localContract,
@@ -135,101 +143,65 @@ export const ExportWorkbench: React.FC = () => {
     }
   };
 
-  const handleSelectLumpSumMode = (mode: LumpSumMode) => {
+  // Handle Lump Sum Mode change from Dialog
+  const handleSaveLumpSumMode = (mode: LumpSumMode) => {
     const nextContract: ContractFull = {
       ...localContract,
       lumpSumMode: mode,
+      amountType: 'LUMPSUM',
       updatedAt: new Date().toISOString(),
     };
     setLocalContract(nextContract);
     updateContract(nextContract);
+    setIsLumpSumModalOpen(false);
   };
 
-  // Direct handlers for updating slabs
-  const handleUpdateSlabs20 = (slabs: WeightSlabBand[]) => {
-    const labels = slabs.map((s) => s.label || `20' <${s.to}t`);
+  // Handle Slab updates from WeightSlabEditor
+  const handleSlabs20Change = (newSlabs: WeightSlabBand[]) => {
+    const labels = newSlabs.map((s) => s.label || `20' <${s.to}t`);
+    const nextContract: ContractFull = {
+      ...localContract,
+      weightSlabs20: newSlabs,
+      updatedAt: new Date().toISOString(),
+    };
+    setLocalContract(nextContract);
     setHeaderLabels20(labels);
-    const updatedSlabs = slabs.map((s, idx) => ({
-      ...s,
-      label: labels[idx],
-    }));
-    const nextContract: ContractFull = {
-      ...localContract,
-      weightSlabs20: updatedSlabs,
-      updatedAt: new Date().toISOString(),
-    };
-    setLocalContract(nextContract);
     updateContract(nextContract);
-  };
+    setSlabUpdateFeedback(`20ft weight slabs updated (${labels.join(', ')}). Rate matrix columns dynamically synchronised.`);
+    setTimeout(() => setSlabUpdateFeedback(null), 5000);
 
-  const handleUpdateSlabs40 = (slabs: WeightSlabBand[]) => {
-    const labels = slabs.map((s) => s.label || `40' <${s.to}t`);
-    setHeaderLabels40(labels);
-    const updatedSlabs = slabs.map((s, idx) => ({
-      ...s,
-      label: labels[idx],
-    }));
-    const nextContract: ContractFull = {
-      ...localContract,
-      weightSlabs40: updatedSlabs,
-      updatedAt: new Date().toISOString(),
-    };
-    setLocalContract(nextContract);
-    updateContract(nextContract);
-  };
-
-  const handleApply20Headers = () => {
-    const slabs = localContract.weightSlabs20 || [];
-    const labels = slabs.map((s) => `20' <${s.to}t`);
-    setHeaderLabels20(labels);
-    const updatedSlabs = slabs.map((s, idx) => ({
-      ...s,
-      label: labels[idx],
-    }));
-    const nextContract: ContractFull = {
-      ...localContract,
-      weightSlabs20: updatedSlabs,
-      updatedAt: new Date().toISOString(),
-    };
-    setLocalContract(nextContract);
-    updateContract(nextContract);
-    setSlabUpdateFeedback(`20ft Weight Slab headers updated: ${labels.join(' | ')}`);
-    setTimeout(() => setSlabUpdateFeedback(null), 3500);
     addAuditLog({
       user: 'system.operator@haulage.intelligence',
-      action: 'CONTRACT_UPDATE',
-      entity: 'Contract',
+      action: 'SLABS_UPDATE',
+      entity: 'WeightSlabs20',
       entityId: localContract.contractNumber,
       summary: `Applied 20ft weight slab definitions for ${localContract.contractNumber}: ${labels.join(', ')}`,
     });
   };
 
-  const handleApply40Headers = () => {
-    const slabs = localContract.weightSlabs40 || [];
-    const labels = slabs.map((s) => `40' <${s.to}t`);
-    setHeaderLabels40(labels);
-    const updatedSlabs = slabs.map((s, idx) => ({
-      ...s,
-      label: labels[idx],
-    }));
+  const handleSlabs40Change = (newSlabs: WeightSlabBand[]) => {
+    const labels = newSlabs.map((s) => s.label || `40' <${s.to}t`);
     const nextContract: ContractFull = {
       ...localContract,
-      weightSlabs40: updatedSlabs,
+      weightSlabs40: newSlabs,
       updatedAt: new Date().toISOString(),
     };
     setLocalContract(nextContract);
+    setHeaderLabels40(labels);
     updateContract(nextContract);
-    setSlabUpdateFeedback(`40ft Weight Slab headers updated: ${labels.join(' | ')}`);
-    setTimeout(() => setSlabUpdateFeedback(null), 3500);
+    setSlabUpdateFeedback(`40ft weight slabs updated (${labels.join(', ')}). Rate matrix columns dynamically synchronised.`);
+    setTimeout(() => setSlabUpdateFeedback(null), 5000);
+
     addAuditLog({
       user: 'system.operator@haulage.intelligence',
-      action: 'CONTRACT_UPDATE',
-      entity: 'Contract',
+      action: 'SLABS_UPDATE',
+      entity: 'WeightSlabs40',
       entityId: localContract.contractNumber,
       summary: `Applied 40ft weight slab definitions for ${localContract.contractNumber}: ${labels.join(', ')}`,
     });
   };
 
+  // Handle Routes modification
   const handleRoutesChange = (newRoutes: ContractRoute[]) => {
     const nextContract: ContractFull = {
       ...localContract,
@@ -240,13 +212,14 @@ export const ExportWorkbench: React.FC = () => {
     updateContract(nextContract);
   };
 
+  // Execute EXPORT RUN
   const handleRunGeneration = async () => {
     if (!runValidation.canRun) return;
     setIsGenerating(true);
     try {
       const run = await executeGenerationForContract(localContract);
       setGenerationSuccess(
-        `EXPORT RUN completed: Generated ${run.mainRecordsCount} haulage records for export group (EDEHAM/EDEBRV) and ${run.weightSlabRecordsCount} child Weight Slab rows.`
+        `EXPORT RUN completed: Generated ${run.mainRecordsCount} haulage records and ${run.weightSlabRecordsCount} child Weight Slab rows with dual POL group routing (EDEHAM/EDEBRV).`
       );
       addAuditLog({
         user: 'system.operator@haulage.intelligence',
@@ -262,6 +235,7 @@ export const ExportWorkbench: React.FC = () => {
     }
   };
 
+  // Clear Generated Output
   const handleClearOutput = () => {
     const nextContract: ContractFull = {
       ...localContract,
@@ -281,20 +255,20 @@ export const ExportWorkbench: React.FC = () => {
   };
 
   return (
-    <div className="p-5 max-w-[1720px] mx-auto space-y-4 text-slate-800">
-      {/* PAGE TITLE BAR */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-200">
+    <div className="p-6 max-w-[1720px] mx-auto space-y-5 text-[#18212B]">
+      {/* PAGE TITLE BAR (Requirement 20) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-[#E1E7EC]">
         <div>
           <div className="flex items-center space-x-2.5">
-            <div className="p-1.5 bg-[#0F8B8D] text-white rounded-md">
-              <ArrowUpRight className="w-5 h-5" />
+            <div className="p-1.5 bg-[#17212B] text-[#FFF4DB] rounded-lg border border-[#F5A623]/40 shadow-xs">
+              <ArrowUpRight className="w-5 h-5 text-[#168C8C]" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-slate-900 tracking-tight">
-                Haulage Input Sheet for Export
+              <h1 className="text-xl font-bold text-[#18212B] tracking-tight">
+                Export Rate Workbench
               </h1>
-              <p className="text-xs text-slate-500 font-mono">
-                Original Excel/VBA Interactive Export Rate Workbench (EDEHAM / EDEBRV Group Generation)
+              <p className="text-xs text-[#5C6B78] font-mono">
+                Configure outbound haulage routes and contract pricing for enterprise processing.
               </p>
             </div>
           </div>
@@ -302,8 +276,8 @@ export const ExportWorkbench: React.FC = () => {
 
         {/* Contract Selector / Quick Actions */}
         <div className="flex items-center space-x-2">
-          <div className="flex items-center space-x-1.5 text-xs bg-white border border-slate-300 rounded px-2.5 py-1">
-            <span className="text-slate-500 font-medium">Contract:</span>
+          <div className="flex items-center space-x-1.5 text-xs bg-white border border-[#E1E7EC] rounded-lg px-3 py-1.5 shadow-enterprise-sm">
+            <span className="text-[#5C6B78] font-bold">Contract:</span>
             <select
               value={localContract.id}
               onChange={(e) => {
@@ -316,7 +290,7 @@ export const ExportWorkbench: React.FC = () => {
                   setSlabUpdateFeedback(null);
                 }
               }}
-              className="font-bold text-slate-800 bg-transparent focus:outline-hidden"
+              className="font-bold text-[#18212B] bg-transparent focus:outline-hidden cursor-pointer"
             >
               {contracts
                 .filter((c) => c.direction === 'EXPORT')
@@ -331,9 +305,9 @@ export const ExportWorkbench: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveView('generated-trust')}
-            className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded text-xs font-semibold transition-colors"
+            className="flex items-center space-x-1.5 px-3 py-1.5 bg-[#17212B] hover:bg-[#202D39] text-[#FFF4DB] rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-enterprise-sm"
           >
-            <Table className="w-3.5 h-3.5 text-emerald-400" />
+            <Table className="w-3.5 h-3.5 text-[#F5A623]" />
             <span>View Generated Records</span>
           </button>
         </div>
@@ -341,20 +315,20 @@ export const ExportWorkbench: React.FC = () => {
 
       {/* FEEDBACK BANNERS */}
       {slabUpdateFeedback && (
-        <div className="bg-emerald-50 border border-emerald-300 text-emerald-900 px-4 py-2 rounded-lg flex items-center justify-between text-xs animate-in fade-in">
+        <div className="bg-blue-50 border border-blue-200 text-[#176B9B] px-4 py-2.5 rounded-xl flex items-center justify-between text-xs animate-fade-in shadow-enterprise-sm">
           <div className="flex items-center space-x-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-[#176B9B] shrink-0" />
             <span className="font-semibold">{slabUpdateFeedback}</span>
           </div>
-          <span className="text-[11px] font-mono text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded">
-            Matrix Headers Synced
+          <span className="text-[11px] font-mono text-[#176B9B] bg-blue-100/60 px-2 py-0.5 rounded">
+            Matrix Columns Synchronized
           </span>
         </div>
       )}
 
       {/* GENERATION SUCCESS NOTIFICATION */}
       {generationSuccess && (
-        <div className="bg-emerald-50 border border-emerald-300 text-emerald-900 px-4 py-2.5 rounded-lg flex items-center justify-between text-xs animate-in fade-in">
+        <div className="bg-emerald-50 border border-emerald-300 text-emerald-900 px-4 py-2.5 rounded-xl flex items-center justify-between text-xs animate-fade-in shadow-enterprise-sm">
           <div className="flex items-center space-x-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             <span className="font-semibold">{generationSuccess}</span>
@@ -362,77 +336,118 @@ export const ExportWorkbench: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveView('generated-trust')}
-            className="flex items-center space-x-1 text-emerald-800 hover:text-emerald-950 font-bold underline text-xs"
+            className="flex items-center space-x-1 text-emerald-800 hover:text-emerald-950 font-bold underline text-xs cursor-pointer"
           >
-            <span>Open Generated Haulage Records</span>
+            <span>Inspect Outputs</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
 
-      {/* TOP CONFIGURATION & WEIGHT SLABS SPLIT LAYOUT */}
-      <div className="grid grid-cols-12 gap-4 items-stretch">
-        {/* LEFT CONFIGURATION BLOCK (7-Row Header Form) */}
-        <div className="col-span-12 xl:col-span-7">
-          <ContractHeaderForm
-            header={localContract}
-            direction="EXPORT"
-            vendors={vendors}
-            locations={locations}
-            onChange={handleHeaderChange}
-            onAmountTypeChange={handleAmountTypeChange}
-          />
-        </div>
-
-        {/* RIGHT WEIGHT SLAB CONFIGURATION BLOCK & ACTIONS */}
-        <div className="col-span-12 xl:col-span-5">
-          <WeightSlabEditor
-            slabs20={localContract.weightSlabs20 || []}
-            slabs40={localContract.weightSlabs40 || []}
-            onUpdateSlabs20={handleUpdateSlabs20}
-            onUpdateSlabs40={handleUpdateSlabs40}
-            onApply20Headers={handleApply20Headers}
-            onApply40Headers={handleApply40Headers}
-            onRunGeneration={handleRunGeneration}
-            onClearOutput={handleClearOutput}
-            onOpenHelp={() => setIsHelpOpen(true)}
-            direction="EXPORT"
-            isRunDisabled={!runValidation.canRun || isGenerating}
-            disabledReason={runValidation.reason}
-            isGenerated={Boolean(existingRun || localContract.generatedAt)}
-          />
-        </div>
-      </div>
-
-      {/* MAIN ROUTE / RATE ENTRY MATRIX */}
-      <div className="pt-2">
-        <HaulageRateGrid
-          header={localContract}
-          routes={localContract.routes || []}
-          direction="EXPORT"
-          locations={locations}
-          facilities={facilities}
-          slabs20={localContract.weightSlabs20 || []}
-          slabs40={localContract.weightSlabs40 || []}
-          headerLabels20={headerLabels20}
-          headerLabels40={headerLabels40}
-          onChangeRoutes={handleRoutesChange}
-        />
-      </div>
-
-      {/* LUMP SUM MODE DIALOG */}
-      <LumpSumModeDialog
-        isOpen={isLumpSumModalOpen}
-        currentMode={localContract.lumpSumMode}
-        onSelectMode={handleSelectLumpSumMode}
-        onClose={() => setIsLumpSumModalOpen(false)}
+      {/* 1. CONTRACT HEADER CONFIGURATION */}
+      <ContractHeaderForm
+        header={localContract}
+        direction="EXPORT"
+        vendors={vendors}
+        locations={locations}
+        onChange={handleHeaderChange}
+        onAmountTypeChange={handleAmountTypeChange}
       />
 
-      {/* IN-APP HELP DRAWER */}
+      {/* 2. DYNAMIC WEIGHT SLAB DEFINITIONS */}
+      {localContract.amountType === 'WEIGHT_SLAB' && (
+        <WeightSlabEditor
+          direction="EXPORT"
+          slabs20={localContract.weightSlabs20 || []}
+          slabs40={localContract.weightSlabs40 || []}
+          onUpdate20={handleSlabs20Change}
+          onUpdate40={handleSlabs40Change}
+        />
+      )}
+
+      {/* 3. ROUTE & RATE MATRIX */}
+      <HaulageRateGrid
+        header={localContract}
+        direction="EXPORT"
+        routes={localContract.routes || []}
+        amountType={localContract.amountType}
+        lumpSumMode={localContract.lumpSumMode || 'SINGLE_AMOUNT'}
+        headerLabels20={headerLabels20}
+        headerLabels40={headerLabels40}
+        locations={locations}
+        onChange={handleRoutesChange}
+      />
+
+      {/* 4. WORKBENCH FOOTER ACTIONS */}
+      <div className="bg-white rounded-2xl border border-[#E1E7EC] shadow-enterprise p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center space-x-3 text-xs">
+          <div className="p-2 bg-[#F5F7FA] rounded-lg border border-[#E1E7EC]">
+            <Sparkles className="w-4 h-4 text-[#168C8C]" />
+          </div>
+          <div>
+            <div className="font-bold text-[#18212B] flex items-center gap-2">
+              <span>Operational Pipeline Status</span>
+              {existingRun ? (
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  RUN EXECUTED ({existingRun.recordsCount} Rows)
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                  DRAFT / UNPROCESSED
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-[#5C6B78]">
+              {runValidation.canRun
+                ? 'All route entries valid. Ready to generate canonical haulage records.'
+                : `Action needed: ${runValidation.reason}`}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          {existingRun && (
+            <button
+              type="button"
+              onClick={handleClearOutput}
+              className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1.5 cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Reset Staging</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={handleRunGeneration}
+            disabled={!runValidation.canRun || isGenerating}
+            className={`px-5 py-2 rounded-lg text-xs font-extrabold flex items-center space-x-2 transition-all shadow-md cursor-pointer ${
+              runValidation.canRun && !isGenerating
+                ? 'bg-[#F5A623] hover:bg-[#DF8B0B] text-[#17212B]'
+                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+            }`}
+          >
+            <Play className="w-3.5 h-3.5 fill-current" />
+            <span>{isGenerating ? 'Processing Pipeline...' : 'Run Export Generation'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Lump Sum Mode Configuration Modal */}
+      {isLumpSumModalOpen && (
+        <LumpSumModeDialog
+          isOpen={isLumpSumModalOpen}
+          initialMode={localContract.lumpSumMode || 'SINGLE_AMOUNT'}
+          onSave={handleSaveLumpSumMode}
+          onClose={() => setIsLumpSumModalOpen(false)}
+        />
+      )}
+
+      {/* Help Drawer */}
       <HelpDrawer
         isOpen={isHelpOpen}
         onClose={() => setIsHelpOpen(false)}
-        direction="EXPORT"
+        context="EXPORT"
       />
     </div>
   );

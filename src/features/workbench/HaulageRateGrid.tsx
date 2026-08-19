@@ -35,16 +35,19 @@ import {
 } from 'lucide-react';
 
 interface HaulageRateGridProps {
-  header: ContractHeader;
+  header?: ContractHeader;
   routes: ContractRoute[];
-  direction: 'IMPORT' | 'EXPORT';
-  locations: LocationMaster[];
-  facilities: TerminalFacility[];
-  slabs20: WeightSlabBand[];
-  slabs40: WeightSlabBand[];
-  headerLabels20: string[];
-  headerLabels40: string[];
-  onChangeRoutes: (newRoutes: ContractRoute[]) => void;
+  direction?: 'IMPORT' | 'EXPORT';
+  locations?: LocationMaster[];
+  facilities?: TerminalFacility[];
+  slabs20?: WeightSlabBand[];
+  slabs40?: WeightSlabBand[];
+  headerLabels20?: string[];
+  headerLabels40?: string[];
+  amountType?: AmountType;
+  lumpSumMode?: LumpSumMode;
+  onChange?: (newRoutes: ContractRoute[]) => void;
+  onChangeRoutes?: (newRoutes: ContractRoute[]) => void;
 }
 
 const PICKUP_DROP_TYPES: PickupDropReturnType[] = [
@@ -70,21 +73,29 @@ const TERMS: PickupDropTerm[] = [
 export const HaulageRateGrid: React.FC<HaulageRateGridProps> = ({
   header,
   routes,
-  direction,
-  locations,
-  facilities,
-  slabs20,
-  slabs40,
-  headerLabels20,
-  headerLabels40,
+  direction = 'IMPORT',
+  locations = [],
+  facilities = [],
+  slabs20 = [],
+  slabs40 = [],
+  headerLabels20 = [],
+  headerLabels40 = [],
+  amountType,
+  lumpSumMode,
+  onChange,
   onChangeRoutes,
 }) => {
   const isImport = direction === 'IMPORT';
-  const isWeightSlab = header.amountType === 'WEIGHT_SLAB';
+  const effectiveAmountType = amountType || header?.amountType || 'WEIGHT_SLAB';
+  const effectiveLumpSumMode = lumpSumMode || header?.lumpSumMode || 'SINGLE_AMOUNT';
+
+  const isWeightSlab = effectiveAmountType === 'WEIGHT_SLAB';
   const isLumpSumSingle =
-    header.amountType === 'LUMPSUM' && header.lumpSumMode === 'SINGLE_AMOUNT';
+    effectiveAmountType === 'LUMPSUM' && effectiveLumpSumMode === 'SINGLE_AMOUNT';
   const isLumpSumSplit =
-    header.amountType === 'LUMPSUM' && header.lumpSumMode === 'EQUIPMENT_SPECIFIC';
+    effectiveAmountType === 'LUMPSUM' && effectiveLumpSumMode === 'EQUIPMENT_SPECIFIC';
+
+  const notifyChange = onChange || onChangeRoutes || (() => {});
 
   const [searchFilter, setSearchFilter] = useState('');
   const [selectedRowIds, setSelectedRowIds] = useState<Set<string>>(new Set());
@@ -99,32 +110,32 @@ export const HaulageRateGrid: React.FC<HaulageRateGridProps> = ({
         ...r,
         // Inherited fields
         pickupLocationName: isImport
-          ? header.pickupLocationName
+          ? header?.pickupLocationName || 'Hamburg'
           : r.pickupLocationName || 'Hamburg',
         pickupLocationCode: isImport
-          ? header.pickupLocationCode
+          ? header?.pickupLocationCode || 'DEHAM'
           : r.pickupLocationCode || 'DEHAM',
-        pickupType: isImport ? header.pickupType : r.pickupType,
-        pickupTerm: isImport ? header.pickupTerm : r.pickupTerm,
-        dropType: isImport ? r.dropType || header.dropType : header.dropType,
-        dropTerm: isImport ? r.dropTerm || header.dropTerm : header.dropTerm,
+        pickupType: isImport ? header?.pickupType || 'Location' : r.pickupType,
+        pickupTerm: isImport ? header?.pickupTerm || 'CY' : r.pickupTerm,
+        dropType: isImport ? r.dropType || header?.dropType || 'Location' : header?.dropType || 'Location',
+        dropTerm: isImport ? r.dropTerm || header?.dropTerm || 'CY' : header?.dropTerm || 'CY',
         returnLocationName: !isImport
-          ? header.returnLocationName
-          : r.returnLocationName || header.returnLocationName,
+          ? header?.returnLocationName || 'Hamburg'
+          : r.returnLocationName || header?.returnLocationName || 'Hamburg',
         returnLocationCode: !isImport
-          ? header.returnLocationCode
-          : r.returnLocationCode || header.returnLocationCode,
-        returnType: header.returnType,
-        haulageMode: header.haulageMode,
-        ladenStatus: header.ladenStatus,
-        currency: header.currency,
-        payableAt: header.payableAt,
-        negotiatedOn: header.negotiatedOn,
-        negotiatedBy: header.negotiatedBy,
-        validFrom: header.validFrom,
-        validTo: header.validTo,
-        tripType: header.tripType,
-        vendorCode: header.vendorCode,
+          ? header?.returnLocationCode || 'DEHAM'
+          : r.returnLocationCode || header?.returnLocationCode || 'DEHAM',
+        returnType: header?.returnType || 'Location',
+        haulageMode: header?.haulageMode || 'Combined',
+        ladenStatus: header?.ladenStatus || 'Laden',
+        currency: header?.currency || 'EUR',
+        payableAt: header?.payableAt || 'POD',
+        negotiatedOn: header?.negotiatedOn || '2026-01-01',
+        negotiatedBy: header?.negotiatedBy || 'Commercial Desk',
+        validFrom: header?.validFrom || '2026-01-01',
+        validTo: header?.validTo || '2026-12-31',
+        tripType: header?.tripType || 'Live Load',
+        vendorCode: header?.vendorCode || 'VEND-001',
       };
     });
   }, [routes, header, isImport]);
@@ -161,7 +172,7 @@ export const HaulageRateGrid: React.FC<HaulageRateGridProps> = ({
   // Route update handler
   const handleUpdateRoute = (id: string, updates: Partial<ContractRoute>) => {
     const next = routes.map((r) => (r.id === id ? { ...r, ...updates } : r));
-    onChangeRoutes(next);
+    notifyChange(next);
   };
 
   const handleUpdateSlabRate = (
@@ -182,41 +193,41 @@ export const HaulageRateGrid: React.FC<HaulageRateGridProps> = ({
       }
       return r;
     });
-    onChangeRoutes(next);
+    notifyChange(next);
   };
 
   // Add 1 Row
   const handleAddRow = () => {
     const newSeq = routes.length + 1;
-    const defaultDrop = locations.find((l) => l.locationCode === 'CZPRG') || locations[0];
+    const defaultDrop = locations.find((l) => l.locationCode === 'CZPRG') || locations[0] || { locationName: 'Prague', locationCode: 'CZPRG' };
     const newRoute: ContractRoute = {
       id: `r-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-      contractId: header.id,
+      contractId: header?.id || 'MHI-IMP-001',
       sequence: newSeq,
-      pickupLocationName: isImport ? header.pickupLocationName : 'Hamburg',
-      pickupLocationCode: isImport ? header.pickupLocationCode : 'DEHAM',
-      pickupType: header.pickupType,
+      pickupLocationName: isImport ? header?.pickupLocationName || 'Hamburg' : 'Hamburg',
+      pickupLocationCode: isImport ? header?.pickupLocationCode || 'DEHAM' : 'DEHAM',
+      pickupType: header?.pickupType || 'Location',
       pickupFacilityCode: isImport ? 'DEHAMTBURC' : '',
-      pickupTerm: header.pickupTerm,
-      dropLocationName: isImport ? defaultDrop.locationName : header.returnLocationName,
-      dropLocationCode: isImport ? defaultDrop.locationCode : header.returnLocationCode,
-      dropType: header.dropType,
+      pickupTerm: header?.pickupTerm || 'CY',
+      dropLocationName: isImport ? defaultDrop.locationName : header?.returnLocationName || 'Hamburg',
+      dropLocationCode: isImport ? defaultDrop.locationCode : header?.returnLocationCode || 'DEHAM',
+      dropType: header?.dropType || 'Location',
       dropFacilityCode: isImport ? 'CZPRGMETR' : 'DEHAMTBURC',
-      dropTerm: header.dropTerm,
-      returnLocationName: header.returnLocationName,
-      returnLocationCode: header.returnLocationCode,
-      returnType: header.returnType,
-      haulageMode: header.haulageMode,
-      ladenStatus: header.ladenStatus,
-      currency: header.currency,
-      payableAt: header.payableAt,
-      portToPay: header.portToPay,
-      negotiatedOn: header.negotiatedOn,
-      negotiatedBy: header.negotiatedBy,
-      validFrom: header.validFrom,
-      validTo: header.validTo,
-      tripType: header.tripType,
-      vendorCode: header.vendorCode,
+      dropTerm: header?.dropTerm || 'CY',
+      returnLocationName: header?.returnLocationName || 'Hamburg',
+      returnLocationCode: header?.returnLocationCode || 'DEHAM',
+      returnType: header?.returnType || 'Location',
+      haulageMode: header?.haulageMode || 'Combined',
+      ladenStatus: header?.ladenStatus || 'Laden',
+      currency: header?.currency || 'EUR',
+      payableAt: header?.payableAt || 'POD',
+      portToPay: header?.portToPay || 'DEHAM',
+      negotiatedOn: header?.negotiatedOn || '2026-01-01',
+      negotiatedBy: header?.negotiatedBy || 'Commercial Officer',
+      validFrom: header?.validFrom || '2026-01-01',
+      validTo: header?.validTo || '2026-12-31',
+      tripType: header?.tripType || 'Live Load',
+      vendorCode: header?.vendorCode || 'VEND-001',
       remarks: 'Standard Hinterland Rate',
       generalAmount: 500,
       amount20: 500,
@@ -225,7 +236,7 @@ export const HaulageRateGrid: React.FC<HaulageRateGridProps> = ({
       slabRates40: { 1: 720, 2: 780, 3: 860, 4: 950, 5: 1080 },
       active: true,
     };
-    onChangeRoutes([...routes, newRoute]);
+    notifyChange([...routes, newRoute]);
   };
 
   // Add 10 Rows
@@ -245,32 +256,32 @@ export const HaulageRateGrid: React.FC<HaulageRateGridProps> = ({
       const loc = sampleLocs[i % sampleLocs.length];
       batch.push({
         id: `r-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 4)}`,
-        contractId: header.id,
+        contractId: header?.id || 'MHI-IMP-001',
         sequence: startSeq + i,
-        pickupLocationName: isImport ? header.pickupLocationName : loc.name,
-        pickupLocationCode: isImport ? header.pickupLocationCode : loc.code,
-        pickupType: header.pickupType,
+        pickupLocationName: isImport ? header?.pickupLocationName || 'Hamburg' : loc.name,
+        pickupLocationCode: isImport ? header?.pickupLocationCode || 'DEHAM' : loc.code,
+        pickupType: header?.pickupType || 'Location',
         pickupFacilityCode: isImport ? 'DEHAMTBURC' : loc.fac,
-        pickupTerm: header.pickupTerm,
-        dropLocationName: isImport ? loc.name : header.returnLocationName,
-        dropLocationCode: isImport ? loc.code : header.returnLocationCode,
-        dropType: header.dropType,
+        pickupTerm: header?.pickupTerm || 'CY',
+        dropLocationName: isImport ? loc.name : header?.returnLocationName || 'Hamburg',
+        dropLocationCode: isImport ? loc.code : header?.returnLocationCode || 'DEHAM',
+        dropType: header?.dropType || 'Location',
         dropFacilityCode: isImport ? loc.fac : 'DEHAMTBURC',
-        dropTerm: header.dropTerm,
-        returnLocationName: header.returnLocationName,
-        returnLocationCode: header.returnLocationCode,
-        returnType: header.returnType,
-        haulageMode: header.haulageMode,
-        ladenStatus: header.ladenStatus,
-        currency: header.currency,
-        payableAt: header.payableAt,
-        portToPay: header.portToPay,
-        negotiatedOn: header.negotiatedOn,
-        negotiatedBy: header.negotiatedBy,
-        validFrom: header.validFrom,
-        validTo: header.validTo,
-        tripType: header.tripType,
-        vendorCode: header.vendorCode,
+        dropTerm: header?.dropTerm || 'CY',
+        returnLocationName: header?.returnLocationName || 'Hamburg',
+        returnLocationCode: header?.returnLocationCode || 'DEHAM',
+        returnType: header?.returnType || 'Location',
+        haulageMode: header?.haulageMode || 'Combined',
+        ladenStatus: header?.ladenStatus || 'Laden',
+        currency: header?.currency || 'EUR',
+        payableAt: header?.payableAt || 'POD',
+        portToPay: header?.portToPay || 'DEHAM',
+        negotiatedOn: header?.negotiatedOn || '2026-01-01',
+        negotiatedBy: header?.negotiatedBy || 'Commercial Officer',
+        validFrom: header?.validFrom || '2026-01-01',
+        validTo: header?.validTo || '2026-12-31',
+        tripType: header?.tripType || 'Live Load',
+        vendorCode: header?.vendorCode || 'VEND-001',
         remarks: `Bulk Rate Row ${startSeq + i}`,
         generalAmount: 550 + i * 20,
         amount20: 550 + i * 20,
@@ -292,7 +303,7 @@ export const HaulageRateGrid: React.FC<HaulageRateGridProps> = ({
         active: true,
       });
     }
-    onChangeRoutes([...routes, ...batch]);
+    notifyChange([...routes, ...batch]);
   };
 
   // Duplicate Selected / Single
@@ -304,7 +315,7 @@ export const HaulageRateGrid: React.FC<HaulageRateGridProps> = ({
       sequence: newSeq,
       remarks: `${route.remarks || ''} (Copy)`,
     };
-    onChangeRoutes([...routes, duplicated]);
+    notifyChange([...routes, duplicated]);
   };
 
   // Delete Single
@@ -312,7 +323,7 @@ export const HaulageRateGrid: React.FC<HaulageRateGridProps> = ({
     const next = routes
       .filter((r) => r.id !== id)
       .map((r, idx) => ({ ...r, sequence: idx + 1 }));
-    onChangeRoutes(next);
+    notifyChange(next);
     setSelectedRowIds((prev) => {
       const nextSet = new Set(prev);
       nextSet.delete(id);
@@ -326,7 +337,7 @@ export const HaulageRateGrid: React.FC<HaulageRateGridProps> = ({
     const next = routes
       .filter((r) => !selectedRowIds.has(r.id))
       .map((r, idx) => ({ ...r, sequence: idx + 1 }));
-    onChangeRoutes(next);
+    notifyChange(next);
     setSelectedRowIds(new Set());
   };
 
@@ -386,32 +397,32 @@ export const HaulageRateGrid: React.FC<HaulageRateGridProps> = ({
 
         parsedRoutes.push({
           id: `r-${Date.now()}-${seq}-${Math.random().toString(36).substr(2, 4)}`,
-          contractId: header.id,
+          contractId: header?.id || 'MHI-IMP-001',
           sequence: seq++,
-          pickupLocationName: isImport ? header.pickupLocationName : 'Hamburg',
-          pickupLocationCode: isImport ? header.pickupLocationCode : 'DEHAM',
-          pickupType: header.pickupType,
+          pickupLocationName: isImport ? header?.pickupLocationName || 'Hamburg' : 'Hamburg',
+          pickupLocationCode: isImport ? header?.pickupLocationCode || 'DEHAM' : 'DEHAM',
+          pickupType: header?.pickupType || 'Location',
           pickupFacilityCode: isImport ? 'DEHAMTBURC' : '',
-          pickupTerm: header.pickupTerm,
-          dropLocationName: isImport ? (locMatch ? locMatch.locationName : dest) : header.returnLocationName,
-          dropLocationCode: isImport ? (locMatch ? locMatch.locationCode : 'CZPRG') : header.returnLocationCode,
-          dropType: header.dropType,
+          pickupTerm: header?.pickupTerm || 'CY',
+          dropLocationName: isImport ? (locMatch ? locMatch.locationName : dest) : header?.returnLocationName || 'Hamburg',
+          dropLocationCode: isImport ? (locMatch ? locMatch.locationCode : 'CZPRG') : header?.returnLocationCode || 'DEHAM',
+          dropType: header?.dropType || 'Location',
           dropFacilityCode: 'CZPRGMETR',
-          dropTerm: header.dropTerm,
-          returnLocationName: header.returnLocationName,
-          returnLocationCode: header.returnLocationCode,
-          returnType: header.returnType,
-          haulageMode: header.haulageMode,
-          ladenStatus: header.ladenStatus,
-          currency: header.currency,
-          payableAt: header.payableAt,
-          portToPay: header.portToPay,
-          negotiatedOn: header.negotiatedOn,
-          negotiatedBy: header.negotiatedBy,
-          validFrom: header.validFrom,
-          validTo: header.validTo,
-          tripType: header.tripType,
-          vendorCode: header.vendorCode,
+          dropTerm: header?.dropTerm || 'CY',
+          returnLocationName: header?.returnLocationName || 'Hamburg',
+          returnLocationCode: header?.returnLocationCode || 'DEHAM',
+          returnType: header?.returnType || 'Location',
+          haulageMode: header?.haulageMode || 'Combined',
+          ladenStatus: header?.ladenStatus || 'Laden',
+          currency: header?.currency || 'EUR',
+          payableAt: header?.payableAt || 'POD',
+          portToPay: header?.portToPay || 'DEHAM',
+          negotiatedOn: header?.negotiatedOn || '2026-01-01',
+          negotiatedBy: header?.negotiatedBy || 'Commercial Officer',
+          validFrom: header?.validFrom || '2026-01-01',
+          validTo: header?.validTo || '2026-12-31',
+          tripType: header?.tripType || 'Live Load',
+          vendorCode: header?.vendorCode || 'VEND-001',
           remarks: 'Imported from Excel Clipboard',
           generalAmount: rate1,
           amount20: rate1,
@@ -429,7 +440,7 @@ export const HaulageRateGrid: React.FC<HaulageRateGridProps> = ({
       }
 
       if (parsedRoutes.length > 0) {
-        onChangeRoutes([...routes, ...parsedRoutes]);
+        notifyChange([...routes, ...parsedRoutes]);
         setPasteFeedback(`Successfully pasted ${parsedRoutes.length} routes from Excel.`);
         setTimeout(() => setPasteFeedback(null), 3500);
       }
@@ -1079,9 +1090,9 @@ export const HaulageRateGrid: React.FC<HaulageRateGridProps> = ({
           <span>
             Pricing Model:{' '}
             <strong className="text-slate-800">
-              {header.amountType === 'WEIGHT_SLAB'
+              {effectiveAmountType === 'WEIGHT_SLAB'
                 ? 'Weight Slab (10 bands)'
-                : header.lumpSumMode === 'SINGLE_AMOUNT'
+                : effectiveLumpSumMode === 'SINGLE_AMOUNT'
                 ? 'Lump Sum (Single)'
                 : 'Lump Sum (20s/40s)'}
             </strong>
