@@ -9,7 +9,7 @@
 
 In global shipping and maritime container transportation, **carrier haulage agreements** govern the inland movement of ocean containers via road, rail, and barge between seaport container terminals and inland dry ports or customer distribution centers.
 
-Historically (circa 2015–2016), commercial rate agreements were negotiated with inland transport vendors across hundreds of corridors. Converting these agreements into the strict format required by enterprise logistics systems (such as **TRUST**) required fragile desktop Excel workbooks (`.xlsm`), manual VLOOKUP operations, and monolithic VBA scripts.
+Historically (circa 2015–2016), commercial rate agreements were negotiated with inland transport vendors across hundreds of corridors. Converting these agreements into the strict format required by legacy enterprise logistics systems required fragile desktop Excel workbooks (`.xlsm`), manual VLOOKUP operations, and monolithic VBA scripts.
 
 **Haulage Contract Intelligence** reconstructs and elevates this mission-critical capability into a modern full-stack application built with **React 19, TypeScript, and Node.js**, featuring **deterministic business rule engines** and a non-invasive **Gemini AI intelligence layer**.
 
@@ -36,28 +36,26 @@ Historically (circa 2015–2016), commercial rate agreements were negotiated wit
 ---
 
 ## 🏗️ Architecture
-
-```
 [ Unstructured Agreement / Excel ] ──> [ Intake / Gemini Extractor ]
-                                                  │
-                                                  ▼
-                                       [ Contract Master State ]
-                                                  │
-                                                  ▼
-                                     [ Deterministic Validator ]
-                                                  │
-                                                  ▼
-                                   [ Terminal Expansion Engine ]
-                                                  │
-                                                  ▼
-                                   [ Weight Slab Record Engine ]
-                                                  │
-                                                  ▼
-                                    [ Sequential TRUST ID Map ]
-                                                  │
-                                                  ▼
-                        [ Legacy XLSX / CSV / JSON Serializer ]
-```
+│
+▼
+[ Contract Master State ]
+│
+▼
+[ Deterministic Validator ]
+│
+▼
+[ Terminal Expansion Engine ]
+│
+▼
+[ Weight Slab Record Engine ]
+│
+▼
+[ Sequential Legacy ID Map ]
+│
+▼
+[ Legacy XLSX / CSV / JSON Serializer ]
+
 
 ---
 
